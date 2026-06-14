@@ -57,6 +57,10 @@ struct OptimizationSettings {
         std::vector<std::string> formats_to_transcode = {"DXT1", "BC7"};
         std::string quality = "balanced";
     } astc_transcoding;
+
+    struct {
+        bool enabled = true;
+    } phase2_lighting;
 };
 
 #endif // MOBILEGLUES_OPTIMIZATION_SETTINGS_H

@@ -10,6 +10,7 @@
 #include "framebuffer.h"
 #include "mg.h"
 #include "texture.h"
+#include "phase2_lighting.h"
 #include <ankerl/unordered_dense.h>
 
 #define DEBUG 0
@@ -104,6 +105,7 @@ void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, const void
           indices, primcount)
     prepareForDraw();
     GLES.glDrawElementsInstanced(mode, count, type, indices, primcount);
+    phase2_on_draw_call();
     CHECK_GL_ERROR
 }
 
@@ -112,6 +114,25 @@ void glDrawElements(GLenum mode, GLsizei count, GLenum type, const void* indices
     LOG_D("glDrawElements, mode: %d, count: %d, type: %d, indices: %p", mode, count, type, indices)
     prepareForDraw();
     GLES.glDrawElements(mode, count, type, indices);
+    phase2_on_draw_call();
+    CHECK_GL_ERROR
+}
+
+void glDrawArrays(GLenum mode, GLint first, GLsizei count) {
+    LOG()
+    LOG_D("glDrawArrays, mode: %d, first: %d, count: %d", mode, first, count)
+    prepareForDraw();
+    GLES.glDrawArrays(mode, first, count);
+    phase2_on_draw_call();
+    CHECK_GL_ERROR
+}
+
+void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei instancecount) {
+    LOG()
+    LOG_D("glDrawArraysInstanced, mode: %d, first: %d, count: %d, instancecount: %d", mode, first, count, instancecount)
+    prepareForDraw();
+    GLES.glDrawArraysInstanced(mode, first, count, instancecount);
+    phase2_on_draw_call();
     CHECK_GL_ERROR
 }
 
@@ -243,5 +264,6 @@ void glDrawElementsBaseVertex(GLenum mode, GLsizei count, GLenum type, const voi
     } else {
         GLES.glDrawElementsBaseVertex(mode, count, type, indices, basevertex);
     }
+    phase2_on_draw_call();
     CHECK_GL_ERROR
 }

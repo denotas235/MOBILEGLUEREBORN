@@ -11,6 +11,7 @@
 #include "../gles/loader.h"
 #include "extension_scanner.h"
 #include "FSR1/FSR1.h"
+#include "phase2_lighting.h"
 
 #define DEBUG 0
 
@@ -112,6 +113,7 @@ void glBindFramebuffer(GLenum target, GLuint framebuffer) {
         current_read_fbo = framebuffer;
     }
     GLES.glBindFramebuffer(target, framebuffer);
+    phase2_on_fbo_change(framebuffer);
 }
 void update_attachment(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level) {
     GLuint current_fbo = (target == GL_READ_FRAMEBUFFER) ? current_read_fbo : current_draw_fbo;

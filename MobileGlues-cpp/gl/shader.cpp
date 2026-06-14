@@ -16,6 +16,7 @@
 #include "glsl/glsl_for_es.h"
 #include "../config/settings.h"
 #include "FSR1/FSR1.h"
+#include "phase2_lighting.h"
 
 #define DEBUG 0
 
@@ -100,6 +101,16 @@ void glShaderSource(GLuint shader, GLsizei count, const GLchar* const* string, c
         LOG_D("\n[INFO] [Shader] Converted Shader source: \n%s", essl_src.c_str())
     }
     if (!essl_src.empty()) {
+        GLint shaderType = 0;
+        GLES.glGetShaderiv(shader, GL_SHADER_TYPE, &shaderType);
+        bool is_fragment = (shaderType == GL_FRAGMENT_SHADER);
+
+        // Injeta otimizações da Fase 2 (PLS e Framebuffer Fetch)
+        essl_src = phase2_inject_pls(essl_src, is_fragment);
+        if (is_fragment) {
+            essl_src = phase2_inject_fbfetch(essl_src);
+        }
+
         shaderInfo.id = shader;
         shaderInfo.converted = essl_src;
         const char* s[] = {essl_src.c_str()};

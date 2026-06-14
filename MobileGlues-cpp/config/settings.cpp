@@ -139,6 +139,14 @@ void load_gpu_optimization_settings() {
         global_settings.gpu_optimizations.astc_transcoding.formats_to_transcode = cjson_get_string_array(astc, "formats_to_transcode", {"DXT1", "BC7"});
         global_settings.gpu_optimizations.astc_transcoding.quality = cjson_get_string(astc, "quality", "balanced");
     }
+
+    // phase2_lighting
+    cJSON* p2 = cJSON_GetObjectItem(gpu_opts, "phase2_lighting");
+    if (p2) {
+        global_settings.gpu_optimizations.phase2_lighting.enabled = cjson_get_bool(p2, "enabled", true);
+    } else {
+        global_settings.gpu_optimizations.phase2_lighting.enabled = true;
+    }
 }
 
 global_settings_t global_settings;

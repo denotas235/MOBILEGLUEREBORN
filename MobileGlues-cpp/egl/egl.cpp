@@ -10,6 +10,7 @@
 #include "../gl/FSR1/FSR1.h"
 #include "../gl/log.h"
 #include "../gl/mg.h"
+#include "../gl/phase2_lighting.h"
 #include "../gles/loader.h"
 #include "../glx/lookup.h"
 #include "loader.h"
@@ -231,6 +232,7 @@ extern "C"
         } else {
             result = egl_eglSwapBuffers(dpy, surface);
         }
+        phase2_on_frame_end();
         return result;
     }
 
