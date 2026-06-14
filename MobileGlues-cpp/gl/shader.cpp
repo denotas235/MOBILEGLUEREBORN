@@ -20,6 +20,9 @@
 
 #define DEBUG 0
 
+#include <unordered_map>
+extern std::unordered_map<GLuint, std::string> g_shader_sources;
+
 struct shader_t shaderInfo;
 
 UnorderedMap<GLuint, bool> shader_map_is_sampler_buffer_emulated;
@@ -111,6 +114,9 @@ void glShaderSource(GLuint shader, GLsizei count, const GLchar* const* string, c
             essl_src = phase2_inject_fbfetch(essl_src);
         }
 
+        // Armazena a fonte do shader para a Fase 3 (Shader Binary Cache)
+        g_shader_sources[shader] = essl_src;
+
         shaderInfo.id = shader;
         shaderInfo.converted = essl_src;
         const char* s[] = {essl_src.c_str()};
@@ -146,4 +152,12 @@ GLuint glCreateShader(GLenum shaderType) {
     if (shader != 0 && hardware->emulate_texture_buffer) shader_map_is_sampler_buffer_emulated[shader] = false;
     CHECK_GL_ERROR
     return shader;
+}
+
+void glDeleteShader(GLuint shader) {
+    LOG()
+    LOG_D("glDeleteShader(%d)", shader)
+    g_shader_sources.erase(shader);
+    GLES.glDeleteShader(shader);
+    CHECK_GL_ERROR
 }

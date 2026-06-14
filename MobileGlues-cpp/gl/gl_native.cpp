@@ -47,7 +47,7 @@ NATIVE_FUNCTION_HEAD(void, glCullFace, GLenum mode) NATIVE_FUNCTION_END_NO_RETUR
 NATIVE_FUNCTION_HEAD(void, glDeleteFramebuffers, GLsizei n, const GLuint *framebuffers) NATIVE_FUNCTION_END_NO_RETURN(void, glDeleteFramebuffers, n,framebuffers)
 NATIVE_FUNCTION_HEAD(void, glDeleteProgram, GLuint program) NATIVE_FUNCTION_END_NO_RETURN(void, glDeleteProgram, program)
 NATIVE_FUNCTION_HEAD(void, glDeleteRenderbuffers, GLsizei n, const GLuint *renderbuffers) NATIVE_FUNCTION_END_NO_RETURN(void, glDeleteRenderbuffers, n,renderbuffers)
-NATIVE_FUNCTION_HEAD(void, glDeleteShader, GLuint shader) NATIVE_FUNCTION_END_NO_RETURN(void, glDeleteShader, shader)
+//NATIVE_FUNCTION_HEAD(void, glDeleteShader, GLuint shader) NATIVE_FUNCTION_END_NO_RETURN(void, glDeleteShader, shader)
 //NATIVE_FUNCTION_HEAD(void, glDeleteTextures, GLsizei n, const GLuint *textures) NATIVE_FUNCTION_END_NO_RETURN(void, glDeleteTextures, n,textures)
 NATIVE_FUNCTION_HEAD(void, glDepthFunc, GLenum func) NATIVE_FUNCTION_END_NO_RETURN(void, glDepthFunc, func)
 NATIVE_FUNCTION_HEAD(void, glDepthMask, GLboolean flag) NATIVE_FUNCTION_END_NO_RETURN(void, glDepthMask, flag)

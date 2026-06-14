@@ -28,6 +28,7 @@ extern "C"
                                          const GLint* length);
 
     GLAPI GLAPIENTRY void glGetShaderiv(GLuint shader, GLenum pname, GLint* params);
+    GLAPI GLAPIENTRY void glDeleteShader(GLuint shader);
 
 #ifdef __cplusplus
 }

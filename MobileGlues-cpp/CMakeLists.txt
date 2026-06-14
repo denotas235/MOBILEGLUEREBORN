@@ -99,6 +99,7 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
     gl/texture.cpp
     gl/extension_scanner.cpp
     gl/phase2_lighting.cpp
+    gl/shader_binary_cache.cpp
     gl/drawing.cpp
     gl/multidraw.cpp
     gl/mg.cpp

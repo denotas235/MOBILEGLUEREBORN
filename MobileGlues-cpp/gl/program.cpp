@@ -17,6 +17,7 @@
 #include "../config/settings.h"
 #include <ankerl/unordered_dense.h>
 #include "drawing.h"
+#include "shader_binary_cache.h"
 
 #define DEBUG 0
 
@@ -172,7 +173,11 @@ void glLinkProgram(GLuint program) {
         }
     }
 
-    GLES.glLinkProgram(program);
+    bool loaded = shader_binary_cache_load(program);
+    if (!loaded) {
+        GLES.glLinkProgram(program);
+        shader_binary_cache_save(program);
+    }
 
     CHECK_GL_ERROR
 }
