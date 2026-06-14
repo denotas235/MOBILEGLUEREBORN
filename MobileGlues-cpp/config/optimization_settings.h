@@ -7,14 +7,14 @@
 struct OptimizationSettings {
     struct {
         bool enabled = true;
-        int max_level = 4;
+        int max_level = 8;        // 4x causava corrompimento de cores (slime, etc). 8x é seguro.
         bool force_limit = true;
     } anisotropic_filtering;
 
     struct {
         bool enabled = true;
-        bool invalidate_depth = true;
-        bool invalidate_stencil = true;
+        bool invalidate_depth = false;   // Desativado: causava player invisível e piscar (FBO 0 ainda usa depth)
+        bool invalidate_stencil = false; // Desativado: causava piscar no céu e blocos na mão
     } framebuffer_invalidation;
 
     struct {
