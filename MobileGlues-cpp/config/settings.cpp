@@ -11,8 +11,135 @@
 #include "../gl/envvars.h"
 #include "gpu_utils.h"
 #include "../gl/getter.h"
+#include "cJSON.h"
+
 
 #define DEBUG 0
+
+static bool cjson_get_bool(cJSON* obj, const char* name, bool default_val) {
+    if (!obj) return default_val;
+    cJSON* item = cJSON_GetObjectItem(obj, name);
+    if (!item) return default_val;
+    if (cJSON_IsBool(item)) {
+        return cJSON_IsTrue(item);
+    }
+    if (cJSON_IsNumber(item)) {
+        return item->valueint != 0;
+    }
+    return default_val;
+}
+
+static int cjson_get_int(cJSON* obj, const char* name, int default_val) {
+    if (!obj) return default_val;
+    cJSON* item = cJSON_GetObjectItem(obj, name);
+    if (!item || !cJSON_IsNumber(item)) return default_val;
+    return item->valueint;
+}
+
+static std::string cjson_get_string(cJSON* obj, const char* name, const std::string& default_val) {
+    if (!obj) return default_val;
+    cJSON* item = cJSON_GetObjectItem(obj, name);
+    if (!item || !cJSON_IsString(item)) return default_val;
+    return item->valuestring;
+}
+
+static std::vector<std::string> cjson_get_string_array(cJSON* obj, const char* name, const std::vector<std::string>& default_val) {
+    if (!obj) return default_val;
+    cJSON* item = cJSON_GetObjectItem(obj, name);
+    if (!item || !cJSON_IsArray(item)) return default_val;
+    std::vector<std::string> result;
+    int size = cJSON_GetArraySize(item);
+    for (int i = 0; i < size; ++i) {
+        cJSON* element = cJSON_GetArrayItem(item, i);
+        if (element && cJSON_IsString(element)) {
+            result.push_back(element->valuestring);
+        }
+    }
+    return result;
+}
+
+void load_gpu_optimization_settings() {
+    cJSON* root = config_get_json_root();
+    if (!root) {
+        LOG_D("[MobileGlues] No config JSON loaded, using default GPU optimizations.");
+        return;
+    }
+
+    cJSON* gpu_opts = cJSON_GetObjectItem(root, "gpu_optimizations");
+    if (!gpu_opts) {
+        LOG_D("[MobileGlues] 'gpu_optimizations' not found in config, using defaults.");
+        return;
+    }
+
+    // anisotropic_filtering
+    cJSON* af = cJSON_GetObjectItem(gpu_opts, "anisotropic_filtering");
+    if (af) {
+        global_settings.gpu_optimizations.anisotropic_filtering.enabled = cjson_get_bool(af, "enabled", true);
+        global_settings.gpu_optimizations.anisotropic_filtering.max_level = cjson_get_int(af, "max_level", 4);
+        global_settings.gpu_optimizations.anisotropic_filtering.force_limit = cjson_get_bool(af, "force_limit", true);
+    }
+
+    // framebuffer_invalidation
+    cJSON* fbi = cJSON_GetObjectItem(gpu_opts, "framebuffer_invalidation");
+    if (fbi) {
+        global_settings.gpu_optimizations.framebuffer_invalidation.enabled = cjson_get_bool(fbi, "enabled", true);
+        global_settings.gpu_optimizations.framebuffer_invalidation.invalidate_depth = cjson_get_bool(fbi, "invalidate_depth", true);
+        global_settings.gpu_optimizations.framebuffer_invalidation.invalidate_stencil = cjson_get_bool(fbi, "invalidate_stencil", true);
+    }
+
+    // extension_scanner
+    cJSON* es = cJSON_GetObjectItem(gpu_opts, "extension_scanner");
+    if (es) {
+        global_settings.gpu_optimizations.extension_scanner.enabled = cjson_get_bool(es, "enabled", true);
+        global_settings.gpu_optimizations.extension_scanner.scan_system_libs = cjson_get_bool(es, "scan_system_libs", true);
+        global_settings.gpu_optimizations.extension_scanner.cache_result = cjson_get_bool(es, "cache_result", true);
+        global_settings.gpu_optimizations.extension_scanner.cache_path = cjson_get_string(es, "cache_path", "/sdcard/MG/extensions_cache.json");
+    }
+
+    // ubo_ssbo_conversion
+    cJSON* ubo = cJSON_GetObjectItem(gpu_opts, "ubo_ssbo_conversion");
+    if (ubo) {
+        global_settings.gpu_optimizations.ubo_ssbo_conversion.enabled = cjson_get_bool(ubo, "enabled", true);
+        global_settings.gpu_optimizations.ubo_ssbo_conversion.max_ubo_size_kb = cjson_get_int(ubo, "max_ubo_size_kb", 64);
+        global_settings.gpu_optimizations.ubo_ssbo_conversion.auto_convert = cjson_get_bool(ubo, "auto_convert", true);
+    }
+
+    // shader_binary_cache
+    cJSON* sbc = cJSON_GetObjectItem(gpu_opts, "shader_binary_cache");
+    if (sbc) {
+        global_settings.gpu_optimizations.shader_binary_cache.enabled = cjson_get_bool(sbc, "enabled", true);
+        global_settings.gpu_optimizations.shader_binary_cache.cache_path = cjson_get_string(sbc, "cache_path", "/sdcard/MG/shader_binaries");
+        global_settings.gpu_optimizations.shader_binary_cache.use_arm_binary = cjson_get_bool(sbc, "use_arm_binary", true);
+        global_settings.gpu_optimizations.shader_binary_cache.use_arb_binary = cjson_get_bool(sbc, "use_arb_binary", false);
+    }
+
+    // damage_regions
+    cJSON* dr = cJSON_GetObjectItem(gpu_opts, "damage_regions");
+    if (dr) {
+        global_settings.gpu_optimizations.damage_regions.enabled = cjson_get_bool(dr, "enabled", false);
+        global_settings.gpu_optimizations.damage_regions.track_dirty_regions = cjson_get_bool(dr, "track_dirty_regions", true);
+        global_settings.gpu_optimizations.damage_regions.max_regions = cjson_get_int(dr, "max_regions", 16);
+    }
+
+    // framebuffer_fetch
+    cJSON* ff = cJSON_GetObjectItem(gpu_opts, "framebuffer_fetch");
+    if (ff) {
+        global_settings.gpu_optimizations.framebuffer_fetch.enabled = cjson_get_bool(ff, "enabled", false);
+        global_settings.gpu_optimizations.framebuffer_fetch.rewrite_shaders = cjson_get_bool(ff, "rewrite_shaders", true);
+        global_settings.gpu_optimizations.framebuffer_fetch.detect_patterns = cjson_get_bool(ff, "detect_patterns", true);
+        global_settings.gpu_optimizations.framebuffer_fetch.supported_ops = cjson_get_string_array(ff, "supported_ops", {"bloom", "dof", "motion_blur"});
+    }
+
+    // astc_transcoding
+    cJSON* astc = cJSON_GetObjectItem(gpu_opts, "astc_transcoding");
+    if (astc) {
+        global_settings.gpu_optimizations.astc_transcoding.enabled = cjson_get_bool(astc, "enabled", false);
+        global_settings.gpu_optimizations.astc_transcoding.async_thread_pool = cjson_get_int(astc, "async_thread_pool", 4);
+        global_settings.gpu_optimizations.astc_transcoding.cache_transcoded = cjson_get_bool(astc, "cache_transcoded", true);
+        global_settings.gpu_optimizations.astc_transcoding.formats_to_transcode = cjson_get_string_array(astc, "formats_to_transcode", {"DXT1", "BC7"});
+        global_settings.gpu_optimizations.astc_transcoding.quality = cjson_get_string(astc, "quality", "balanced");
+    }
+}
 
 global_settings_t global_settings;
 
@@ -196,6 +323,8 @@ void init_settings() {
     global_settings.custom_gl_version = customGLVersion;
     global_settings.fsr1_setting = fsr1Setting;
     global_settings.hide_mg_env_level = hideMGEnvLevel;
+
+    load_gpu_optimization_settings();
 #endif
 
     LOG_V("[MobileGlues] Setting: enableAngle                 = %s",

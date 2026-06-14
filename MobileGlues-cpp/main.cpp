@@ -14,6 +14,8 @@
 #include "gl/mg.h"
 #include "gles/loader.h"
 #include "includes.h"
+#include "gl/extension_scanner.h"
+
 #include <cerrno>
 #include <cstring>
 #include <sys/stat.h>
@@ -62,6 +64,7 @@ void proc_init() {
     load_libs();
     init_target_egl();
     init_target_gles();
+    init_extension_scanner();
     set_multidraw_setting();
 
     init_settings_post();
