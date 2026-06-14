@@ -1,4 +1,4 @@
-name: Build MobileGlues for iOS
+name: Build MobileGlues for iOS and Android
 on: [push, workflow_dispatch]
 jobs:
   build-ios:
@@ -27,3 +27,43 @@ jobs:
         with:
           name: MobileGlues-iOS-dylib
           path: /Users/runner/work/MobileGlues/MobileGlues/MobileGlues-cpp/build
+
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Build MobileGlues for Android arm64-v8a
+        run: |
+          cd MobileGlues-cpp
+          cmake -B build_arm64 \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_LATEST_HOME/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-21 \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build build_arm64 --config Release --target mobileglues
+
+      - name: Build MobileGlues for Android armeabi-v7a
+        run: |
+          cd MobileGlues-cpp
+          cmake -B build_arm32 \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_LATEST_HOME/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=armeabi-v7a \
+            -DANDROID_PLATFORM=android-21 \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build build_arm32 --config Release --target mobileglues
+
+      - name: Upload arm64-v8a SO
+        uses: actions/upload-artifact@v4
+        with:
+          name: libmobileglues-android-arm64
+          path: MobileGlues-cpp/build_arm64/libmobileglues.so
+
+      - name: Upload armeabi-v7a SO
+        uses: actions/upload-artifact@v4
+        with:
+          name: libmobileglues-android-arm32
+          path: MobileGlues-cpp/build_arm32/libmobileglues.so
