@@ -611,8 +611,11 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
     tex->swizzle_param[2] = GL_BLUE;
     tex->swizzle_param[3] = GL_ALPHA;
 
-    if (transfer_format == GL_BGRA && tex->format != transfer_format && internalFormat == GL_RGBA8 && width <= 128 &&
-        height <= 128) { // xaero has 64x64 tiles...hack here
+    // BGRA swizzle: apenas para tiles de mapa (Xaero Minimap usa BGRA + RGBA8 + quadrado + pixels nao-nulos)
+    // Texturas de mob (slime, etc) tambem sao pequenas mas NAO devem ter swizzle aplicado.
+    // Guardas adicionais: width == height (quadrado) e pixels != nullptr (tile do mapa sempre tem dados)
+    if (transfer_format == GL_BGRA && tex->format != transfer_format && internalFormat == GL_RGBA8 &&
+        width <= 128 && height <= 128 && width == height && pixels != nullptr) { // xaero has 64x64 tiles...hack here
         LOG_D("Detected GL_BGRA format @ tex = %d, do swizzle", tex->texture)
         if (tex->swizzle_param[0] == 0) { // assert this as never called glTexParameteri(...,
                                           // GL_TEXTURE_SWIZZLE_R, ...)
@@ -638,6 +641,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
         GLES.glTexParameteri(target, GL_TEXTURE_SWIZZLE_A, tex->swizzle_param[3]);
         CHECK_GL_ERROR
     }
+
 
     tex->format = format;
 
