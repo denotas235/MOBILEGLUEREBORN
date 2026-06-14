@@ -1,7 +1,9 @@
 #include "extension_scanner.h"
 #include "../gles/gles.h"
 #include "../config/settings.h"
+#define DEBUG 0
 #include "log.h"
+#include "mg.h"
 #include <fstream>
 #include <set>
 #include <regex>
