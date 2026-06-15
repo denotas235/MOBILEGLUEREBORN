@@ -4,6 +4,8 @@
 // Licensed under the GNU Lesser General Public License v2.1
 // SPDX-License-Identifier: LGPL-2.1-only
 
+#define DEBUG 0
+
 #include "mali_sorter.h"
 #include "v_sight_math.h"
 #include "buffer.h"

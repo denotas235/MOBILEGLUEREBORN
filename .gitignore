@@ -10,5 +10,7 @@ src/main/cpp/CMakeSettings.json
 /MobileGlues-cpp/build_arm64/
 /.agents/
 /.gradle/
+/run_build_and_download.sh
+
 
 

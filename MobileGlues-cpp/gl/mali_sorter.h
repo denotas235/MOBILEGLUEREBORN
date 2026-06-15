@@ -8,6 +8,7 @@
 #define MALI_SORTER_H
 
 #include <GL/gl.h>
+#include <string>
 
 struct DeferredDrawCall {
     GLuint vao;
