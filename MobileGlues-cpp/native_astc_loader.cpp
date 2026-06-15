@@ -1,3 +1,4 @@
+#ifndef __APPLE__
 #include <jni.h>
 #include <GLES3/gl3.h>
 #include <cstdio>
@@ -46,3 +47,4 @@ extern "C" JNIEXPORT jboolean JNICALL Java_com_nexus_astcmod_NativeASTCLoader_up
     env->ReleaseStringUTFChars(path, nativePath);
     return JNI_TRUE;
 }
+#endif

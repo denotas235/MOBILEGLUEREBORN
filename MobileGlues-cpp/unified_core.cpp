@@ -3,6 +3,7 @@
 // Instâncias globais do Motor Unificado
 MobileGlues::NativeChunkManager g_ChunkManager;
 
+#ifndef __APPLE__
 extern "C" {
 
 // 1. JNI para o V-Sight Culling
@@ -30,3 +31,4 @@ JNIEXPORT void JNICALL Java_com_nexus_astcmod_UnifiedCoreJNI_propagateLightAsync
 }
 
 }
+#endif

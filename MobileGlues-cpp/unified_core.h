@@ -1,5 +1,7 @@
 #pragma once
+#ifndef __APPLE__
 #include <jni.h>
+#endif
 #include <vector>
 #include <unordered_map>
 #include <mutex>
