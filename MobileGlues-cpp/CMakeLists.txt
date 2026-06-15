@@ -87,6 +87,8 @@ set(PROFILING OFF)
 
 add_library(${CMAKE_PROJECT_NAME} SHARED
     init.cpp
+    native_astc_loader.cpp
+    unified_core.cpp
     main.cpp
     gl/gl_stub.cpp
     gl/gl_native.cpp
