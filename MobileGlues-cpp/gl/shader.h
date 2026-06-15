@@ -29,6 +29,8 @@ extern "C"
 
     GLAPI GLAPIENTRY void glGetShaderiv(GLuint shader, GLenum pname, GLint* params);
     GLAPI GLAPIENTRY void glDeleteShader(GLuint shader);
+    GLAPI GLAPIENTRY void glMaxShaderCompilerThreadsKHR(GLuint count);
+    GLAPI GLAPIENTRY void glMaxShaderCompilerThreadsARB(GLuint count);
 
 #ifdef __cplusplus
 }

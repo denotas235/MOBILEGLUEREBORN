@@ -161,3 +161,21 @@ void glDeleteShader(GLuint shader) {
     GLES.glDeleteShader(shader);
     CHECK_GL_ERROR
 }
+
+void glMaxShaderCompilerThreadsKHR(GLuint count) {
+    LOG()
+    LOG_D("glMaxShaderCompilerThreadsKHR(%u)", count)
+    if (GLES.glMaxShaderCompilerThreadsKHR) {
+        GLES.glMaxShaderCompilerThreadsKHR(count);
+    } else {
+        LOG_W("Driver does not support glMaxShaderCompilerThreadsKHR. Ignoring call.");
+    }
+}
+
+void glMaxShaderCompilerThreadsARB(GLuint count) {
+    LOG()
+    LOG_D("glMaxShaderCompilerThreadsARB(%u)", count)
+    if (GLES.glMaxShaderCompilerThreadsKHR) {
+        GLES.glMaxShaderCompilerThreadsKHR(count);
+    }
+}

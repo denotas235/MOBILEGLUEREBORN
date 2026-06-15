@@ -312,6 +312,7 @@ extern "C"
                     void* binary)
     GL_FUNC_TYPEDEF(void, glProgramBinary, GLuint program, GLenum binaryFormat, const void* binary, GLsizei length)
     GL_FUNC_TYPEDEF(void, glProgramParameteri, GLuint program, GLenum pname, GLint value)
+    GL_FUNC_TYPEDEF(void, glMaxShaderCompilerThreadsKHR, GLuint count)
     GL_FUNC_TYPEDEF(void, glInvalidateFramebuffer, GLenum target, GLsizei numAttachments, const GLenum* attachments)
     GL_FUNC_TYPEDEF(void, glInvalidateSubFramebuffer, GLenum target, GLsizei numAttachments, const GLenum* attachments,
                     GLint x, GLint y, GLsizei width, GLsizei height)
@@ -725,6 +726,7 @@ extern "C"
         GL_FUNC_DECL(glGetProgramBinary)
         GL_FUNC_DECL(glProgramBinary)
         GL_FUNC_DECL(glProgramParameteri)
+        GL_FUNC_DECL(glMaxShaderCompilerThreadsKHR)
         GL_FUNC_DECL(glInvalidateFramebuffer)
         GL_FUNC_DECL(glInvalidateSubFramebuffer)
         GL_FUNC_DECL(glTexStorage2D)
