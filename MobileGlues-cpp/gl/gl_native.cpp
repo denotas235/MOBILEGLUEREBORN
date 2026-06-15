@@ -143,7 +143,7 @@ NATIVE_FUNCTION_HEAD(void, glUniform4i, GLint location, GLint v0, GLint v1, GLin
 NATIVE_FUNCTION_HEAD(void, glUniform4iv, GLint location, GLsizei count, const GLint *value) NATIVE_FUNCTION_END_NO_RETURN(void, glUniform4iv, location,count,value)
 NATIVE_FUNCTION_HEAD(void, glUniformMatrix2fv, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value) NATIVE_FUNCTION_END_NO_RETURN(void, glUniformMatrix2fv, location,count,transpose,value)
 NATIVE_FUNCTION_HEAD(void, glUniformMatrix3fv, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value) NATIVE_FUNCTION_END_NO_RETURN(void, glUniformMatrix3fv, location,count,transpose,value)
-NATIVE_FUNCTION_HEAD(void, glUniformMatrix4fv, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value) NATIVE_FUNCTION_END_NO_RETURN(void, glUniformMatrix4fv, location,count,transpose,value)
+//NATIVE_FUNCTION_HEAD(void, glUniformMatrix4fv, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value) NATIVE_FUNCTION_END_NO_RETURN(void, glUniformMatrix4fv, location,count,transpose,value)
 //NATIVE_FUNCTION_HEAD(void, glUseProgram, GLuint program) NATIVE_FUNCTION_END_NO_RETURN(void, glUseProgram, program)
 NATIVE_FUNCTION_HEAD(void, glValidateProgram, GLuint program) NATIVE_FUNCTION_END_NO_RETURN(void, glValidateProgram, program)
 NATIVE_FUNCTION_HEAD(void, glVertexAttrib1f, GLuint index, GLfloat x) NATIVE_FUNCTION_END_NO_RETURN(void, glVertexAttrib1f, index,x)

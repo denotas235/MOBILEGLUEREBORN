@@ -12,6 +12,7 @@
 #include "extension_scanner.h"
 #include "FSR1/FSR1.h"
 #include "phase2_lighting.h"
+#include "mali_sorter.h"
 
 #define DEBUG 0
 
@@ -89,6 +90,7 @@ void invalidate_framebuffer_if_changed(GLuint fbo) {
 }
 
 void glBindFramebuffer(GLenum target, GLuint framebuffer) {
+    mali_sorter_on_framebuffer_change();
     ensure_max_attachments();
     invalidate_framebuffer_if_changed(framebuffer);
 

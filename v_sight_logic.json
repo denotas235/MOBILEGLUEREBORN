@@ -1,0 +1,21 @@
+{
+  "engine_name": "MobileGlues-V-Alpha",
+  "optimization_level": "Extreme",
+  "v_sight": {
+    "fov_angle": 180.0,
+    "foveal_inner_v": 35.0,
+    "foveal_detail_multiplier": 1.0,
+    "periphery_detail_multiplier": 0.4,
+    "occlusion_culling": true
+  },
+  "predictive_streaming": {
+    "use_derivatives": true,
+    "acceleration_bias": 1.5,
+    "velocity_threshold": 0.2
+  },
+  "c2me_optimization": {
+    "max_concurrent_threads": 4,
+    "async_chunk_unloading": true,
+    "priority": "near_foveal_v"
+  }
+}

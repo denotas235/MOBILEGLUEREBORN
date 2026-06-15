@@ -18,6 +18,7 @@
 #include <ankerl/unordered_dense.h>
 #include "drawing.h"
 #include "shader_binary_cache.h"
+#include "mali_sorter.h"
 
 #define DEBUG 0
 
@@ -178,6 +179,7 @@ void glLinkProgram(GLuint program) {
         GLES.glLinkProgram(program);
         shader_binary_cache_save(program);
     }
+    mali_sorter_on_link_program(program);
 
     CHECK_GL_ERROR
 }
@@ -200,6 +202,7 @@ void glGetProgramiv(GLuint program, GLenum pname, GLint* params) {
 void glUseProgram(GLuint program) {
     LOG()
     LOG_D("glUseProgram(%d)", program)
+    mali_sorter_on_use_program(program);
     if (program != gl_state->current_program) {
         gl_state->current_program = program;
         GLES.glUseProgram(program);

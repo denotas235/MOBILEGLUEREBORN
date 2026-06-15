@@ -17,6 +17,7 @@
 #include "../config/settings.h"
 #include "FSR1/FSR1.h"
 #include "phase2_lighting.h"
+#include "mali_sorter.h"
 
 #define DEBUG 0
 
@@ -113,6 +114,9 @@ void glShaderSource(GLuint shader, GLsizei count, const GLchar* const* string, c
         if (is_fragment) {
             essl_src = phase2_inject_fbfetch(essl_src);
         }
+        
+        // Injeta otimização da Fase 4 (AtmosV-Alpha Fog)
+        essl_src = mali_sorter_inject_fog(essl_src, is_fragment);
 
         // Armazena a fonte do shader para a Fase 3 (Shader Binary Cache)
         g_shader_sources[shader] = essl_src;

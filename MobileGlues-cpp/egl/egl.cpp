@@ -11,6 +11,7 @@
 #include "../gl/log.h"
 #include "../gl/mg.h"
 #include "../gl/phase2_lighting.h"
+#include "../gl/mali_sorter.h"
 #include "../gles/loader.h"
 #include "../glx/lookup.h"
 #include "loader.h"
@@ -232,6 +233,7 @@ extern "C"
         } else {
             result = egl_eglSwapBuffers(dpy, surface);
         }
+        mali_sorter_on_frame_end();
         phase2_on_frame_end();
         return result;
     }

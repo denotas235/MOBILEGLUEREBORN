@@ -17,6 +17,7 @@
 #include "gl/extension_scanner.h"
 #include "gl/phase2_lighting.h"
 #include "gl/shader_binary_cache.h"
+#include "gl/mali_sorter.h"
 
 #include <cerrno>
 #include <cstring>
@@ -68,6 +69,7 @@ void proc_init() {
     init_target_gles();
     init_extension_scanner();
     phase2_init();
+    mali_sorter_init();
     shader_binary_cache_init();
     set_multidraw_setting();
 

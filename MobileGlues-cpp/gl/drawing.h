@@ -47,6 +47,7 @@ extern "C"
     GLAPI GLAPIENTRY void glDispatchCompute(GLuint num_groups_x, GLuint num_groups_y, GLuint num_groups_z);
     GLAPI GLAPIENTRY void glMemoryBarrier(GLbitfield barriers);
     GLAPI GLAPIENTRY void glUniform1i(GLint location, GLint v0);
+    GLAPI GLAPIENTRY void glUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
 
 #ifdef __cplusplus
 }
