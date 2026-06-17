@@ -118,6 +118,30 @@ void glShaderSource(GLuint shader, GLsizei count, const GLchar* const* string, c
         // Injeta otimização da Fase 4 (AtmosV-Alpha Fog)
         essl_src = mali_sorter_inject_fog(essl_src, is_fragment);
 
+        // --- Lexical Shader Transpiler (Fase 5 - Engine Fix) ---
+        if (is_fragment) {
+            // Adiciona precisão padrão
+            if (essl_src.find("precision") == std::string::npos) {
+                size_t ver_pos = essl_src.find("#version");
+                if (ver_pos != std::string::npos) {
+                    size_t end_line = essl_src.find('\n', ver_pos);
+                    if (end_line != std::string::npos) essl_src.insert(end_line + 1, "precision mediump float;\n");
+                } else {
+                    essl_src = "precision mediump float;\n" + essl_src;
+                }
+            }
+            // Substitui gl_FragColor obsoleto
+            if (essl_src.find("gl_FragColor") != std::string::npos) {
+                size_t ver_pos = essl_src.find("#version");
+                if (ver_pos != std::string::npos) {
+                    size_t end_line = essl_src.find('\n', ver_pos);
+                    if (end_line != std::string::npos) essl_src.insert(end_line + 1, "layout(location = 0) out vec4 _mg_FragColor;\n#define gl_FragColor _mg_FragColor\n");
+                } else {
+                    essl_src = "layout(location = 0) out vec4 _mg_FragColor;\n#define gl_FragColor _mg_FragColor\n" + essl_src;
+                }
+            }
+        }
+
         // Armazena a fonte do shader para a Fase 3 (Shader Binary Cache)
         g_shader_sources[shader] = essl_src;
 
