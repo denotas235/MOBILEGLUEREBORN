@@ -120,24 +120,55 @@ void glShaderSource(GLuint shader, GLsizei count, const GLchar* const* string, c
 
         // --- Lexical Shader Transpiler (Fase 5 - Engine Fix) ---
         if (is_fragment) {
-            // Adiciona precisão padrão
-            if (essl_src.find("precision") == std::string::npos) {
-                size_t ver_pos = essl_src.find("#version");
+            // Sempre injeta bloco completo de precisões logo após o #version
+            // O GLSL 3.30+ do Minecraft não declara precisões, obrigatório no ESSL 3.0
+            static const std::string precision_block =
+                "precision highp float;\n"
+                "precision highp int;\n"
+                "precision mediump sampler2D;\n"
+                "precision mediump sampler3D;\n"
+                "precision mediump samplerCube;\n"
+                "precision mediump sampler2DShadow;\n"
+                "precision mediump sampler2DArray;\n";
+
+            size_t ver_pos = essl_src.find("#version");
+            size_t inject_pos = std::string::npos;
+            if (ver_pos != std::string::npos) {
+                inject_pos = essl_src.find('\n', ver_pos);
+                if (inject_pos != std::string::npos) inject_pos += 1;
+            }
+
+            // Remove precisões duplicadas antigas se existirem antes de reinjetar
+            size_t old_prec = essl_src.find("precision mediump float;");
+            if (old_prec != std::string::npos) {
+                size_t old_end = essl_src.find('\n', old_prec);
+                if (old_end != std::string::npos) essl_src.erase(old_prec, old_end - old_prec + 1);
+                // Recalcula inject_pos após remoção
+                ver_pos = essl_src.find("#version");
+                inject_pos = std::string::npos;
                 if (ver_pos != std::string::npos) {
-                    size_t end_line = essl_src.find('\n', ver_pos);
-                    if (end_line != std::string::npos) essl_src.insert(end_line + 1, "precision mediump float;\n");
-                } else {
-                    essl_src = "precision mediump float;\n" + essl_src;
+                    inject_pos = essl_src.find('\n', ver_pos);
+                    if (inject_pos != std::string::npos) inject_pos += 1;
                 }
             }
-            // Substitui gl_FragColor obsoleto
+
+            if (inject_pos != std::string::npos) {
+                essl_src.insert(inject_pos, precision_block);
+            } else {
+                essl_src = precision_block + essl_src;
+            }
+
+            // Substitui gl_FragColor obsoleto (banido no ESSL 3.0)
             if (essl_src.find("gl_FragColor") != std::string::npos) {
-                size_t ver_pos = essl_src.find("#version");
+                static const std::string frag_out_decl =
+                    "layout(location = 0) out vec4 _mg_FragColor;\n"
+                    "#define gl_FragColor _mg_FragColor\n";
+                ver_pos = essl_src.find("#version");
                 if (ver_pos != std::string::npos) {
                     size_t end_line = essl_src.find('\n', ver_pos);
-                    if (end_line != std::string::npos) essl_src.insert(end_line + 1, "layout(location = 0) out vec4 _mg_FragColor;\n#define gl_FragColor _mg_FragColor\n");
+                    if (end_line != std::string::npos) essl_src.insert(end_line + 1, frag_out_decl);
                 } else {
-                    essl_src = "layout(location = 0) out vec4 _mg_FragColor;\n#define gl_FragColor _mg_FragColor\n" + essl_src;
+                    essl_src = frag_out_decl + essl_src;
                 }
             }
         }
