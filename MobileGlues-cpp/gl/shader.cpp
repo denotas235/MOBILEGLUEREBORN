@@ -7,6 +7,7 @@
 
 #include <cctype>
 #include "shader.h"
+#include "shader_patcher.h"
 
 #include <GL/gl.h>
 #include "log.h"
@@ -79,20 +80,24 @@ void glShaderSource(GLuint shader, GLsizei count, const GLchar* const* string, c
         }
     }
 
-    bool is_sampler_buffer_emulated = hardware->emulate_texture_buffer && check_if_sampler_buffer_used(glsl_src);
+    // --- Aplicar patch direto no shader antes de qualquer conversão ---
+    GLint shaderType;
+    GLES.glGetShaderiv(shader, GL_SHADER_TYPE, &shaderType);
+    std::string patched_src = patch_shader_source(glsl_src.c_str(), shaderType);
+    // ----------------------------------------------------------------------
 
-    if (is_direct_shader(glsl_src.c_str())) {
+    bool is_sampler_buffer_emulated = hardware->emulate_texture_buffer && check_if_sampler_buffer_used(patched_src);
+
+    if (is_direct_shader(patched_src.c_str())) {
         LOG_D("[INFO] [Shader] Direct shader source: ")
-        LOG_D("%s", glsl_src.c_str())
-        essl_src = glsl_src;
+        LOG_D("%s", patched_src.c_str())
+        essl_src = patched_src;
     } else {
-        int glsl_version = getGLSLVersion(glsl_src.c_str());
+        int glsl_version = getGLSLVersion(patched_src.c_str());
         LOG_D("[INFO] [Shader] Shader source: ")
-        LOG_D("%s", glsl_src.c_str())
-        GLint shaderType;
-        GLES.glGetShaderiv(shader, GL_SHADER_TYPE, &shaderType);
+        LOG_D("%s", patched_src.c_str())
         int return_code = 0;
-        essl_src = GLSLtoGLSLES(glsl_src.c_str(), shaderType, hardware->es_version, glsl_version, return_code);
+        essl_src = GLSLtoGLSLES(patched_src.c_str(), shaderType, hardware->es_version, glsl_version, return_code);
         if (return_code == 1) { // atomicCounterEmulated
             shader_map_is_atomic_counter_emulated[shader] = true;
             LOG_D("[INFO] [Shader] Atomic counter emulated in shader %d", shader)
@@ -227,7 +232,7 @@ void glMaxShaderCompilerThreadsKHR(GLuint count) {
     if (GLES.glMaxShaderCompilerThreadsKHR) {
         GLES.glMaxShaderCompilerThreadsKHR(count);
     } else {
-        LOG_W("Driver does not support glMaxShaderCompilerThreadsKHR. Ignoring call.");
+        LOG_W("Driver does not support glMaxShaderCompilerThreadsKHR. Ignoring call.")
     }
 }
 
