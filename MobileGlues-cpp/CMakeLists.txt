@@ -7,8 +7,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 # glslang & SPIRV-Cross
-set(ENABLE_RTTI                ON  CACHE BOOL "Enables RTTI (will be took by glslang)" FORCE)
-set(ENABLE_HLSL                OFF CACHE BOOL "Disable HLSL input for glslang" FORCE)
+set(ENABLE_RTTI                ON  CACHE BOOL "Enables RTTI" FORCE)
+set(ENABLE_HLSL                OFF CACHE BOOL "Disable HLSL" FORCE)
 set(BUILD_EXTERNAL             OFF CACHE BOOL "Disable build external dependencies for glslang" FORCE)
 set(ENABLE_GLSLANG_BINARIES    OFF CACHE BOOL "Disable glslangValidator/spirv-remap" FORCE)
 set(ENABLE_OPT                 OFF CACHE BOOL "Disable SPIRV-Tools opt usage in glslang" FORCE)
@@ -98,6 +98,9 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
     gl/program.cpp
     gl/shader.cpp
     gl/shader_patcher.cpp
+    gl/shader_patcher.h
+    gl/glsl/shader_header_manager.cpp
+    gl/glsl/shader_header_manager.h
     gl/framebuffer.cpp
     gl/texture.cpp
     gl/extension_scanner.cpp
