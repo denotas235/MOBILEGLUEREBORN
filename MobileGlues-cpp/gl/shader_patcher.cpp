@@ -36,11 +36,13 @@ std::string patch_shader_source(const char* original_source, GLenum shader_type)
         if (shader_type == GL_VERTEX_SHADER) {
             if (body.find("ProjectionMatrix") != std::string::npos &&
                 body.find("uniform mat4 ProjectionMatrix;") == std::string::npos) {
-                body = "uniform mat4 ProjectionMatrix;\n" +
-                       "uniform mat4 ModelViewMatrix;\n" +
-                       "uniform mat4 SpriteMatrix;\n" +
-                       "uniform float UPadding;\n" +
-                       "uniform float VPadding;\n" + body;
+                body = std::string(
+                           "uniform mat4 ProjectionMatrix;\n"
+                           "uniform mat4 ModelViewMatrix;\n"
+                           "uniform mat4 SpriteMatrix;\n"
+                           "uniform float UPadding;\n"
+                           "uniform float VPadding;\n"
+                       ) + body;
             }
 
             // Substitui "varying" por "out" (apenas no corpo)
