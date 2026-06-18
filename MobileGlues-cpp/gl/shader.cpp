@@ -7,6 +7,7 @@
 
 #include <cctype>
 #include "shader.h"
+#include "shader_sanitizer.h"
 #include "shader_patcher.h"
 
 #include <GL/gl.h>
@@ -80,7 +81,13 @@ void glShaderSource(GLuint shader, GLsizei count, const GLchar* const* string, c
         }
     }
 
-    // --- Aplicar patch direto no shader antes de qualquer conversão ---
+    // --- Fase 1: Sanitizador GLES 3.0 (deve ser ABSOLUTAMENTE o primeiro passo) ---
+    // Garante que #version 300 es é o primeiro byte, remove extensões ASTC
+    // problemáticas e injeta precisão. Sem isto, o driver Mali rejeita o shader
+    // com erro 0:1 / 0:2 antes de qualquer outra transformação poder correr.
+    glsl_src = sanitizeForMaliGLES(glsl_src);
+
+    // --- Fase 1b: Aplicar patch adicional no shader (após sanitização) ---
     GLint shaderType;
     GLES.glGetShaderiv(shader, GL_SHADER_TYPE, &shaderType);
     std::string patched_src = patch_shader_source(glsl_src.c_str(), shaderType);

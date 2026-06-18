@@ -97,6 +97,8 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
     gl/log.cpp
     gl/program.cpp
     gl/shader.cpp
+    gl/shader_sanitizer.cpp
+    gl/shader_sanitizer.h
     gl/shader_patcher.cpp
     gl/shader_patcher.h
     gl/glsl/shader_header_manager.cpp
