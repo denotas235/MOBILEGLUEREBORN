@@ -56,25 +56,30 @@ jobs:
           cd MobileGlues-cpp
           cmake --build build_arm32 --config Release --target mobileglues -- -j4
 
+      - name: Rename artifacts with architecture suffix
+        run: |
+          cp MobileGlues-cpp/build_arm64/libmobileglues.so libmobileglues-arm64-v8a.so
+          cp MobileGlues-cpp/build_arm32/libmobileglues.so libmobileglues-armeabi-v7a.so
+
       - name: Upload arm64-v8a SO
         uses: actions/upload-artifact@v4
         with:
           name: libmobileglues-android-arm64
-          path: MobileGlues-cpp/build_arm64/libmobileglues.so
+          path: libmobileglues-arm64-v8a.so
 
       - name: Upload armeabi-v7a SO
         uses: actions/upload-artifact@v4
         with:
           name: libmobileglues-android-arm32
-          path: MobileGlues-cpp/build_arm32/libmobileglues.so
+          path: libmobileglues-armeabi-v7a.so
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/feature/mali-g52-phase1'
         with:
-          name: MobileGlues Mali-G52 Build
+          name: MobileGlues Mali-G52 Build ${{ github.run_number }}
           tag_name: mali-g52-build-${{ github.run_number }}
+          generate_release_notes: false
           files: |
-            MobileGlues-cpp/build_arm64/libmobileglues.so
-            MobileGlues-cpp/build_arm32/libmobileglues.so
-          fail_on_unmatched_files: false
+            libmobileglues-arm64-v8a.so
+            libmobileglues-armeabi-v7a.so
