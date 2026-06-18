@@ -10,6 +10,8 @@
 #include "framebuffer.h"
 #include "mg.h"
 #include "texture.h"
+#include "phase2_lighting.h"
+#include "mali_sorter.h"
 #include <ankerl/unordered_dense.h>
 
 #define DEBUG 0
@@ -104,14 +106,37 @@ void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, const void
           indices, primcount)
     prepareForDraw();
     GLES.glDrawElementsInstanced(mode, count, type, indices, primcount);
+    phase2_on_draw_call();
     CHECK_GL_ERROR
 }
 
 void glDrawElements(GLenum mode, GLsizei count, GLenum type, const void* indices) {
     LOG()
     LOG_D("glDrawElements, mode: %d, count: %d, type: %d, indices: %p", mode, count, type, indices)
+    if (mali_sorter_on_draw_elements(mode, count, type, indices, 0, false)) {
+        return;
+    }
     prepareForDraw();
     GLES.glDrawElements(mode, count, type, indices);
+    phase2_on_draw_call();
+    CHECK_GL_ERROR
+}
+
+void glDrawArrays(GLenum mode, GLint first, GLsizei count) {
+    LOG()
+    LOG_D("glDrawArrays, mode: %d, first: %d, count: %d", mode, first, count)
+    prepareForDraw();
+    GLES.glDrawArrays(mode, first, count);
+    phase2_on_draw_call();
+    CHECK_GL_ERROR
+}
+
+void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei instancecount) {
+    LOG()
+    LOG_D("glDrawArraysInstanced, mode: %d, first: %d, count: %d, instancecount: %d", mode, first, count, instancecount)
+    prepareForDraw();
+    GLES.glDrawArraysInstanced(mode, first, count, instancecount);
+    phase2_on_draw_call();
     CHECK_GL_ERROR
 }
 
@@ -161,6 +186,9 @@ void glDrawElementsBaseVertex(GLenum mode, GLsizei count, GLenum type, const voi
     LOG()
     LOG_D("glDrawElementsBaseVertex, mode: %d, count: %d, type: %d, indices: %p, basevertex: %d", mode, count, type,
           indices, basevertex);
+    if (mali_sorter_on_draw_elements(mode, count, type, indices, basevertex, true)) {
+        return;
+    }
     prepareForDraw();
     if (hardware->es_version < 320 && !g_gles_caps.GL_EXT_draw_elements_base_vertex &&
         !g_gles_caps.GL_OES_draw_elements_base_vertex) {
@@ -243,5 +271,15 @@ void glDrawElementsBaseVertex(GLenum mode, GLsizei count, GLenum type, const voi
     } else {
         GLES.glDrawElementsBaseVertex(mode, count, type, indices, basevertex);
     }
+    phase2_on_draw_call();
     CHECK_GL_ERROR
 }
+
+void glUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value) {
+    LOG()
+    LOG_D("glUniformMatrix4fv, location: %d, count: %d, transpose: %d", location, count, transpose)
+    mali_sorter_on_uniform_matrix4fv(location, count, transpose, value);
+    GLES.glUniformMatrix4fv(location, count, transpose, value);
+    CHECK_GL_ERROR
+}
+

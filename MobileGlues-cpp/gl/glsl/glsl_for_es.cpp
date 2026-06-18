@@ -338,16 +338,18 @@ std::string GLSLtoGLSLES(const char* glsl_code, GLenum glsl_type, uint essl_vers
         LOG_D("GLSL Hit Cache:\n%s\n-->\n%s", glsl_code, cachedESSL)
         bool atomicCounterEmulated = checkIfAtomicCounterBufferEmulated(std::string(cachedESSL));
         return_code = atomicCounterEmulated ? 1 : 0;
-        return (char*)cachedESSL;
+        return normalise_shader_header(std::string(cachedESSL), glsl_type, essl_version);
     }
 
     return_code = -1;
-    // std::string converted = glsl_version<140? GLSLtoGLSLES_1(glsl_code, glsl_type, essl_version,
-    // return_code):GLSLtoGLSLES_2(glsl_code, glsl_type, essl_version, return_code);
     std::string converted = GLSLtoGLSLES_2(glsl_code, glsl_type, essl_version, return_code);
     if (return_code >= 0 && !converted.empty()) {
         converted = process_uniform_declarations(converted);
         Cache::get_instance().put(sha256_string.c_str(), converted.c_str());
+    }
+
+    if (return_code >= 0 && !converted.empty()) {
+        converted = normalise_shader_header(converted, glsl_type, essl_version);
     }
 
     return (return_code >= 0) ? converted : glsl_code;
@@ -558,7 +560,7 @@ bool process_non_opaque_atomic_to_ssbo(std::string& source) {
     return true;
 }
 
-void process_sampler_buffer(std::string& source) { // a simplized version, should be rewritten in the future
+void process_sampler_buffer(std::string& source) {
     if (source.find("isamplerBuffer") == std::string::npos) {
         return;
     }
@@ -879,7 +881,6 @@ std::string GLSLtoGLSLES_2(const char* glsl_code, GLenum glsl_type, uint essl_ve
     }
 
     // Post-processing ESSL
-
     if (glsl_type != GL_COMPUTE_SHADER) {
         essl = removeLayoutBinding(essl);
     }
@@ -894,19 +895,6 @@ std::string GLSLtoGLSLES_2(const char* glsl_code, GLenum glsl_type, uint essl_ve
     return essl;
 }
 
-std::string GLSLtoGLSLES_1(const char* glsl_code, GLenum glsl_type, uint esversion, int& return_code) { // useless now
-    /*
-#if !defined(__APPLE__)
-    LOG_W("Warning: use glsl optimizer to convert shader.")
-    if (esversion < 300) esversion = 300;
-    std::string result = MesaConvertShader(glsl_code, glsl_type == GL_VERTEX_SHADER ? GL_VERTEX_SHADER :
-GL_FRAGMENT_SHADER, 460LL, esversion);
-
-    return_code = 0;
-    return result;
-#else
-    LOG_W_FORCE("Cannot convert glsl with version %d in MacOS/iOS", esversion);
-    return std::string(glsl_code);
-#endif
-    */
+std::string GLSLtoGLSLES_1(const char* glsl_code, GLenum glsl_type, uint esversion, int& return_code) {
+    return "";
 }

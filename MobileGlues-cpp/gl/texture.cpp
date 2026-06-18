@@ -7,6 +7,8 @@
 
 #include "texture.h"
 #include "GLES3/gl32.h"
+#include "../config/settings.h"
+
 
 #include <cstdlib>
 #include <cstring>
@@ -475,6 +477,46 @@ void internal_convert(GLenum* internal_format, GLenum* type, GLenum* format) {
     }
 }
 
+static GLfloat g_max_aniso_limit = 16.0f;
+static bool g_aniso_initialized = false;
+
+void init_anisotropic_limiter() {
+    if (g_aniso_initialized) return;
+    g_aniso_initialized = true;
+    if (!global_settings.gpu_optimizations.anisotropic_filtering.enabled) {
+        return;
+    }
+
+    GLfloat maxAniso = 16.0f;
+    GLES.glGetFloatv(0x84FF /* GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT */, &maxAniso);
+
+    GLfloat limit = (float)global_settings.gpu_optimizations.anisotropic_filtering.max_level;
+    g_max_aniso_limit = std::min(maxAniso, limit);
+
+    LOG_D("Anisotropic filtering limited to %.1f (from %.1f)", g_max_aniso_limit, maxAniso);
+}
+
+void glTexParameterf_aniso_wrap(GLenum target, GLenum pname, GLfloat param) {
+    if (pname == 0x84FE /* GL_TEXTURE_MAX_ANISOTROPY_EXT */) {
+        init_anisotropic_limiter();
+        if (global_settings.gpu_optimizations.anisotropic_filtering.enabled) {
+            param = std::min(param, g_max_aniso_limit);
+        }
+    }
+    GLES.glTexParameterf(target, pname, param);
+}
+
+void glTexParameteri_aniso_wrap(GLenum target, GLenum pname, GLint param) {
+    if (pname == 0x84FE /* GL_TEXTURE_MAX_ANISOTROPY_EXT */) {
+        init_anisotropic_limiter();
+        if (global_settings.gpu_optimizations.anisotropic_filtering.enabled) {
+            param = std::min(param, static_cast<GLint>(g_max_aniso_limit));
+        }
+    }
+    GLES.glTexParameteri(target, pname, param);
+}
+
+
 void glTexParameterf(GLenum target, GLenum pname, GLfloat param) {
     LOG()
     pname = pname_convert(pname);
@@ -485,7 +527,7 @@ void glTexParameterf(GLenum target, GLenum pname, GLfloat param) {
         return;
     }
 
-    GLES.glTexParameterf(target, pname, param);
+    glTexParameterf_aniso_wrap(target, pname, param);
     CHECK_GL_ERROR
 }
 
@@ -569,8 +611,11 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
     tex->swizzle_param[2] = GL_BLUE;
     tex->swizzle_param[3] = GL_ALPHA;
 
-    if (transfer_format == GL_BGRA && tex->format != transfer_format && internalFormat == GL_RGBA8 && width <= 128 &&
-        height <= 128) { // xaero has 64x64 tiles...hack here
+    // BGRA swizzle: apenas para tiles de mapa (Xaero Minimap usa BGRA + RGBA8 + quadrado + pixels nao-nulos)
+    // Texturas de mob (slime, etc) tambem sao pequenas mas NAO devem ter swizzle aplicado.
+    // Guardas adicionais: width == height (quadrado) e pixels != nullptr (tile do mapa sempre tem dados)
+    if (transfer_format == GL_BGRA && tex->format != transfer_format && internalFormat == GL_RGBA8 &&
+        width <= 128 && height <= 128 && width == height && pixels != nullptr) { // xaero has 64x64 tiles...hack here
         LOG_D("Detected GL_BGRA format @ tex = %d, do swizzle", tex->texture)
         if (tex->swizzle_param[0] == 0) { // assert this as never called glTexParameteri(...,
                                           // GL_TEXTURE_SWIZZLE_R, ...)
@@ -596,6 +641,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
         GLES.glTexParameteri(target, GL_TEXTURE_SWIZZLE_A, tex->swizzle_param[3]);
         CHECK_GL_ERROR
     }
+
 
     tex->format = format;
 
@@ -1179,7 +1225,7 @@ void glTexParameteri(GLenum target, GLenum pname, GLint param) {
         return;
     }
 
-    GLES.glTexParameteri(target, pname, param);
+    glTexParameteri_aniso_wrap(target, pname, param);
     CHECK_GL_ERROR
 }
 

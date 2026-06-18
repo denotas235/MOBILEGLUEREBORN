@@ -463,6 +463,10 @@ void init_target_gles() {
     INIT_GLES_FUNC(glGetProgramBinary)
     INIT_GLES_FUNC(glProgramBinary)
     INIT_GLES_FUNC(glProgramParameteri)
+    GLES.glMaxShaderCompilerThreadsKHR = (glMaxShaderCompilerThreadsKHR_PTR)proc_address(gles, "glMaxShaderCompilerThreadsKHR");
+    if (!GLES.glMaxShaderCompilerThreadsKHR) {
+        GLES.glMaxShaderCompilerThreadsKHR = (glMaxShaderCompilerThreadsKHR_PTR)proc_address(gles, "glMaxShaderCompilerThreads");
+    }
     INIT_GLES_FUNC(glInvalidateFramebuffer)
     INIT_GLES_FUNC(glInvalidateSubFramebuffer)
     INIT_GLES_FUNC(glTexStorage2D)

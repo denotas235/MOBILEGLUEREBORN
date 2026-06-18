@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "mobileglues",
+  "version": "${version}",
+  "name": "MobileGlues Shader Sanitizer",
+  "description": "Intercepta shaders do Minecraft Java Edition e converte-os para GLES 3.0 compativel com GPU Mali-G52. Resolve erros 0:1/0:2 causados por extensoes ASTC e versoes Desktop GL.",
+  "authors": [
+    "MobileGL-Dev"
+  ],
+  "contact": {
+    "sources": "https://github.com/denotas235/MOBILEGLUEREBORN"
+  },
+  "license": "LGPL-2.1",
+  "environment": "client",
+  "entrypoints": {},
+  "mixins": [
+    "mobileglues.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

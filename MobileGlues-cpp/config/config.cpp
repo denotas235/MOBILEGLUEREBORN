@@ -121,6 +121,10 @@ char* config_get_string(char* name) {
     return item->valuestring;
 }
 
+cJSON* config_get_json_root() {
+    return config_json;
+}
+
 void config_cleanup() {
     if (config_json != NULL) {
         cJSON_Delete(config_json);

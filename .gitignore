@@ -4,3 +4,13 @@
 src/main/cpp/.vs
 src/main/cpp/out
 src/main/cpp/CMakeSettings.json
+/MobileGlues-cpp/build_local/
+/MobileGlues-cpp/build/
+/MobileGlues-cpp/build_arm32/
+/MobileGlues-cpp/build_arm64/
+/.agents/
+/.gradle/
+/run_build_and_download.sh
+
+
+

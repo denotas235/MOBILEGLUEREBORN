@@ -23,9 +23,11 @@ extern "C"
 
     int check_path();
 
+    struct cJSON;
     int config_refresh();
     int config_get_int(char* name);
     char* config_get_string(char* name);
+    struct cJSON* config_get_json_root();
     void config_cleanup();
 
 #ifdef __cplusplus

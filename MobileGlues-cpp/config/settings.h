@@ -13,6 +13,8 @@
 #include <sstream>
 #include <algorithm>
 #include <cctype>
+#include "optimization_settings.h"
+
 
 #if !defined(__APPLE__)
 #include <__stddef_size_t.h>
@@ -170,6 +172,7 @@ struct global_settings_t {
     Version custom_gl_version;
     FSR1_Quality_Preset fsr1_setting;
     HideMGEnvLevel hide_mg_env_level;
+    OptimizationSettings gpu_optimizations;
 };
 
 extern global_settings_t global_settings;

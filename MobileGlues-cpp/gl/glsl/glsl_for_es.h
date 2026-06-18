@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include <string>
 
+#include "shader_header_manager.h"
+
 #ifdef __cplusplus
 extern "C"
 {

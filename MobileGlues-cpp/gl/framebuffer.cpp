@@ -8,7 +8,11 @@
 #include "framebuffer.h"
 #include "log.h"
 #include "../config/settings.h"
+#include "../gles/loader.h"
+#include "extension_scanner.h"
 #include "FSR1/FSR1.h"
+#include "phase2_lighting.h"
+#include "mali_sorter.h"
 
 #define DEBUG 0
 
@@ -43,8 +47,53 @@ void init_framebuffer(framebuffer_t& fbo) {
         fbo.initialized = true;
     }
 }
+static GLuint g_last_fbo_bound = 0;
+static bool g_fbo_invalidation_supported = false;
+static bool g_fbo_invalidation_checked = false;
+
+void init_fbo_invalidation() {
+    if (g_fbo_invalidation_checked) return;
+    g_fbo_invalidation_checked = true;
+    
+    g_fbo_invalidation_supported = (g_gles_caps.major >= 3);
+    if (!g_fbo_invalidation_supported) {
+        g_fbo_invalidation_supported = has_extension("GL_EXT_discard_framebuffer");
+    }
+    LOG_D("Framebuffer invalidation supported: %d", g_fbo_invalidation_supported);
+}
+
+void invalidate_framebuffer_if_changed(GLuint fbo) {
+    if (!global_settings.gpu_optimizations.framebuffer_invalidation.enabled) return;
+    init_fbo_invalidation();
+    if (!g_fbo_invalidation_supported) return;
+    if (g_last_fbo_bound == fbo) return;  // Evita duplicatas
+
+    // Se voltando pro default (0), invalidar o FBO anterior
+    if (fbo == 0 && g_last_fbo_bound != 0) {
+        GLenum invalidate_attachments[2];
+        GLsizei count = 0;
+
+        if (global_settings.gpu_optimizations.framebuffer_invalidation.invalidate_depth) {
+            invalidate_attachments[count++] = GL_DEPTH_ATTACHMENT;
+        }
+        if (global_settings.gpu_optimizations.framebuffer_invalidation.invalidate_stencil) {
+            invalidate_attachments[count++] = GL_STENCIL_ATTACHMENT;
+        }
+
+        if (count > 0) {
+            GLES.glInvalidateFramebuffer(GL_FRAMEBUFFER, count, invalidate_attachments);
+            LOG_D("Invalidated FBO %u attachments via glInvalidateFramebuffer", g_last_fbo_bound);
+        }
+    }
+
+    g_last_fbo_bound = fbo;
+}
+
 void glBindFramebuffer(GLenum target, GLuint framebuffer) {
+    mali_sorter_on_framebuffer_change();
     ensure_max_attachments();
+    invalidate_framebuffer_if_changed(framebuffer);
+
     framebuffer_t& fbo = get_framebuffer(framebuffer);
 
     if (framebuffer == 0 && target != GL_READ_FRAMEBUFFER) {
@@ -66,6 +115,7 @@ void glBindFramebuffer(GLenum target, GLuint framebuffer) {
         current_read_fbo = framebuffer;
     }
     GLES.glBindFramebuffer(target, framebuffer);
+    phase2_on_fbo_change(framebuffer);
 }
 void update_attachment(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level) {
     GLuint current_fbo = (target == GL_READ_FRAMEBUFFER) ? current_read_fbo : current_draw_fbo;
