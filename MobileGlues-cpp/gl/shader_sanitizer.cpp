@@ -1,8 +1,7 @@
 // MobileGlues - gl/shader_sanitizer.cpp
-// Phase 1: Mali GLES 3.0 Shader Sanitizer (à prova de falhas) + Diagnostic Log
+// Phase 1: Mali GLES 3.0 Shader Sanitizer + Diagnostic Log
 // Copyright (c) 2025-2026 MobileGL-Dev
-// Licensed under the GNU Lesser General Public License v2.1:
-//   https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt
+// Licensed under the GNU Lesser General Public License v2.1
 // SPDX-License-Identifier: LGPL-2.1-only
 
 #include "shader_sanitizer.h"
@@ -10,21 +9,22 @@
 #include <jni.h>
 #include <string>
 #include <sstream>
-#include <algorithm>
 #include <cstdio>
+#include <cstdarg>   // va_list, va_start, va_end — obrigatório para write_log
 #include <ctime>
+#include <cstring>
 #include <sys/stat.h>
 #include <android/log.h>
 
-#define SANITIZER_TAG   "MG_ShaderSanitizer"
-#define SANITIZER_LOG   "/sdcard/MG/shader_sanitizer.log"
-#define MAX_LOG_BYTES   (4 * 1024 * 1024)   // Rota o ficheiro após 4 MB
+#define SANITIZER_TAG  "MG_ShaderSanitizer"
+#define SANITIZER_LOG  "/sdcard/MG/shader_sanitizer.log"
+#define MAX_LOG_BYTES  (4 * 1024 * 1024)   // Rota ficheiro após 4 MB
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Extensões que a Mali-G52 NÃO suporta dentro de shaders.
-// Se alguma aparecer ANTES do #version (bug de código legado / mods antigos),
-// o driver lança "extension not supported" na linha 0:1 ou 0:2,
-// empurrando o #version para uma linha errada e quebrando toda a pipeline.
+// Se qualquer uma destas aparecer ANTES do #version (bug de código legado),
+// o driver lança "extension not supported" na linha 0:1 ou 0:2 e empurra
+// o #version para a posição errada, quebrando toda a pipeline de renderização.
 // ─────────────────────────────────────────────────────────────────────────────
 static const char* const UNSUPPORTED_EXTENSIONS[] = {
     "GL_EXT_texture_compression_astc",
@@ -35,60 +35,57 @@ static const char* const UNSUPPORTED_EXTENSIONS[] = {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sistema de Log Diagnóstico
-// Escreve em /sdcard/MG/shader_sanitizer.log E no logcat Android.
-// Roda o ficheiro quando excede MAX_LOG_BYTES para não encher o armazenamento.
+// Duplo output: logcat Android + ficheiro /sdcard/MG/shader_sanitizer.log
+// Rota automaticamente ao atingir MAX_LOG_BYTES (guarda cópia como .bak).
+// Se /sdcard/ não for acessível, continua em silêncio (sem crash).
 // ─────────────────────────────────────────────────────────────────────────────
 static void ensure_log_dir() {
-    mkdir("/sdcard/MG", 0777);
+    mkdir("/sdcard/MG", 0755);
 }
 
 static void rotate_log_if_needed() {
-    struct stat st;
+    struct stat st{};
     if (stat(SANITIZER_LOG, &st) == 0 && st.st_size > MAX_LOG_BYTES) {
-        // Renomeia o log atual para .bak (sobrescreve o anterior)
         rename(SANITIZER_LOG, SANITIZER_LOG ".bak");
     }
 }
 
 static void write_log(const char* level, const char* fmt, ...) {
-    // 1. Logcat
-    va_list args_logcat;
-    va_start(args_logcat, fmt);
-    __android_log_vprint(ANDROID_LOG_DEBUG, SANITIZER_TAG, fmt, args_logcat);
-    va_end(args_logcat);
+    // 1. Logcat Android
+    va_list ap1;
+    va_start(ap1, fmt);
+    __android_log_vprint(ANDROID_LOG_DEBUG, SANITIZER_TAG, fmt, ap1);
+    va_end(ap1);
 
-    // 2. Ficheiro em /sdcard/MG/shader_sanitizer.log
+    // 2. Ficheiro /sdcard/MG/shader_sanitizer.log
     ensure_log_dir();
     rotate_log_if_needed();
 
     FILE* f = fopen(SANITIZER_LOG, "a");
-    if (!f) return;
+    if (!f) return;   // /sdcard não acessível — continua sem crash
 
-    // Timestamp ISO 8601
     time_t now = time(nullptr);
-    struct tm* tm_info = localtime(&now);
+    struct tm* t = localtime(&now);
     char ts[32];
-    strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%S", tm_info);
+    strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%S", t);
+    fprintf(f, "[%s] [%-6s] ", ts, level);
 
-    fprintf(f, "[%s] [%s] ", ts, level);
+    va_list ap2;
+    va_start(ap2, fmt);
+    vfprintf(f, fmt, ap2);
+    va_end(ap2);
 
-    va_list args_file;
-    va_start(args_file, fmt);
-    vfprintf(f, fmt, args_file);
-    va_end(args_file);
-
-    fprintf(f, "\n");
+    fputc('\n', f);
     fclose(f);
 }
 
-// Abrevia o shader para identificação no log (primeiros 80 chars, sem newlines)
+// Primeiros 80 caracteres do shader numa única linha (para identificação no log)
 static std::string shader_fingerprint(const std::string& src) {
     std::string fp;
     fp.reserve(80);
     for (char c : src) {
-        if (fp.size() >= 80) break;
-        if (c == '\n' || c == '\r') fp += ' ';
-        else fp += c;
+        if (fp.size() >= 80) { fp += "..."; break; }
+        fp += (c == '\n' || c == '\r') ? ' ' : c;
     }
     return fp;
 }
@@ -96,111 +93,90 @@ static std::string shader_fingerprint(const std::string& src) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers internos
 // ─────────────────────────────────────────────────────────────────────────────
-static bool line_contains_unsupported_extension(const std::string& line) {
-    for (int i = 0; UNSUPPORTED_EXTENSIONS[i] != nullptr; ++i) {
-        if (line.find(UNSUPPORTED_EXTENSIONS[i]) != std::string::npos) {
+static bool line_has_unsupported_ext(const std::string& line) {
+    for (int i = 0; UNSUPPORTED_EXTENSIONS[i]; ++i)
+        if (line.find(UNSUPPORTED_EXTENSIONS[i]) != std::string::npos)
             return true;
-        }
-    }
     return false;
 }
 
-static const char* find_unsupported_extension_name(const std::string& line) {
-    for (int i = 0; UNSUPPORTED_EXTENSIONS[i] != nullptr; ++i) {
-        if (line.find(UNSUPPORTED_EXTENSIONS[i]) != std::string::npos) {
+static const char* find_ext_name(const std::string& line) {
+    for (int i = 0; UNSUPPORTED_EXTENSIONS[i]; ++i)
+        if (line.find(UNSUPPORTED_EXTENSIONS[i]) != std::string::npos)
             return UNSUPPORTED_EXTENSIONS[i];
-        }
-    }
-    return nullptr;
+    return "(desconhecida)";
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// sanitizeForMaliGLES
+// sanitizeForMaliGLES — núcleo do motor
 //
-// Algoritmo linha-a-linha (SEM std::regex) para robustez total.
-// Registos de diagnóstico em /sdcard/MG/shader_sanitizer.log.
-//
-// Garante:
-//   1. #version 300 es é o PRIMEIRO BYTE absoluto do output.
-//   2. precision highp float/int/sampler2D injetados logo após.
-//   3. Extensões ASTC incompatíveis removidas (com log da extensão exata).
-//   4. texture2D() → texture() (com contagem de substituições no log).
+// Algoritmo linha-a-linha SEM std::regex para robustez máxima.
+// Garante que o output começa SEMPRE com "#version 300 es\n" como
+// primeiro byte absoluto — qualquer desvio causa crash no driver Mali.
 // ─────────────────────────────────────────────────────────────────────────────
 std::string sanitizeForMaliGLES(const std::string& source) {
     std::istringstream stream(source);
-    std::string line;
-    std::string body;
-
-    // Contadores para o relatório de diagnóstico
-    bool     had_desktop_version  = false;
-    bool     had_astc_extension   = false;
-    int      astc_extensions_removed = 0;
-    int      texture2d_replaced   = 0;
-    int      line_number          = 0;
-    std::string original_version_line;
-    std::string first_bad_extension;
-
+    std::string line, body;
     body.reserve(source.size());
 
+    bool had_desktop_version = false;
+    bool had_astc             = false;
+    int  astc_removed         = 0;
+    int  tex2d_replaced       = 0;
+    int  line_num             = 0;
+    std::string orig_version;
+    std::string first_bad_ext;
+
     while (std::getline(stream, line)) {
-        line_number++;
+        ++line_num;
 
-        // 1. Remover whitespace inicial (espaços, tabs, \r)
+        // 1. Strip leading whitespace / \r
         size_t first = line.find_first_not_of(" \t\r");
-        if (first != std::string::npos) {
-            line = line.substr(first);
-        } else {
-            // Linha completamente vazia — ignorar para não criar linhas em
-            // branco antes do #version no output final.
-            continue;
-        }
+        if (first == std::string::npos) continue;   // linha vazia — pular
+        if (first > 0) line = line.substr(first);
 
-        // 2. Descartar extensões não suportadas na Mali (causa erro 0:1/0:2)
+        // 2. Remover extensões ASTC não suportadas na Mali
         if (line.find("#extension") != std::string::npos &&
-            line_contains_unsupported_extension(line)) {
-            const char* ext_name = find_unsupported_extension_name(line);
-            if (!had_astc_extension) {
-                had_astc_extension = true;
-                first_bad_extension = ext_name ? ext_name : "(desconhecida)";
-            }
-            astc_extensions_removed++;
+            line_has_unsupported_ext(line))
+        {
+            const char* ext = find_ext_name(line);
+            if (!had_astc) { had_astc = true; first_bad_ext = ext; }
+            ++astc_removed;
             write_log("WARN",
-                "Linha %d: extensao removida [%s] — causaria erro 0:%d no driver Mali",
-                line_number, ext_name ? ext_name : "?", line_number);
+                "Linha %d: extensao bloqueada [%s] — causaria erro 0:%d no driver Mali",
+                line_num, ext, line_num);
             continue;
         }
 
-        // 3. Capturar e descartar a diretiva #version original do Desktop GL
+        // 3. Descartar #version do Desktop GL (será substituída por 300 es)
         if (line.find("#version") != std::string::npos) {
             if (!had_desktop_version) {
                 had_desktop_version = true;
-                original_version_line = line;
+                orig_version = line;
                 write_log("INFO",
-                    "Linha %d: versao Desktop GL detetada [%s] — sera substituida por '#version 300 es'",
-                    line_number, line.c_str());
+                    "Linha %d: versao Desktop GL [%s] removida — sera forcado '#version 300 es'",
+                    line_num, line.c_str());
             }
-            continue; // Descarta — injetamos a versão GLES correta no início
+            continue;
         }
 
-        // 4. Substituir texture2D() → texture() (obsoleto no GLES 3.0+)
-        size_t pos = 0;
-        while ((pos = line.find("texture2D(", pos)) != std::string::npos) {
+        // 4. texture2D() → texture()  (obsoleto no GLES 3.0+)
+        for (size_t pos = 0;
+             (pos = line.find("texture2D(", pos)) != std::string::npos; )
+        {
             line.replace(pos, 10, "texture(");
             pos += 8;
-            texture2d_replaced++;
+            ++tex2d_replaced;
         }
 
         // 5. Acumular linha no corpo
-        if (!line.empty()) {
-            body += line + "\n";
-        }
+        body += line;
+        body += '\n';
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Montar o shader final com boilerplate GLES 3.0 garantidamente na linha 1.
-    //
-    // Regra da Mali: qualquer caractere antes do #version = crash imediato.
-    // Aqui o #version é literalmente o primeiro byte da string de saída.
+    // Montar output: boilerplate GLES 3.0 GARANTIDAMENTE na linha 1.
+    // "#version" é o primeiro byte — sem espaço, sem BOM, sem nada antes.
     // ─────────────────────────────────────────────────────────────────────────
     std::string result;
     result.reserve(body.size() + 128);
@@ -211,57 +187,46 @@ std::string sanitizeForMaliGLES(const std::string& source) {
         "precision highp sampler2D;\n";
     result += body;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Relatório final de diagnóstico
-    // ─────────────────────────────────────────────────────────────────────────
-    bool any_issue = had_desktop_version || had_astc_extension || (texture2d_replaced > 0);
-
-    if (any_issue) {
+    // Relatório final
+    if (had_desktop_version || had_astc || tex2d_replaced > 0) {
         write_log("REPORT",
-            "=== Sanitizacao concluida | linhas_processadas=%d "
-            "versao_desktop=%s versao_original=[%s] "
-            "extensoes_astc_removidas=%d primeira_extensao_problematica=[%s] "
-            "texture2D_substituidos=%d | fingerprint=[%s]",
-            line_number,
-            had_desktop_version  ? "SIM" : "NAO",
-            original_version_line.empty() ? "(nenhuma)" : original_version_line.c_str(),
-            astc_extensions_removed,
-            first_bad_extension.empty() ? "(nenhuma)" : first_bad_extension.c_str(),
-            texture2d_replaced,
+            "=== Sanitizacao OK | linhas=%d versao_desktop=%s orig=[%s] "
+            "astc_removidas=%d primeira_ext=[%s] texture2D_sub=%d | fp=[%s]",
+            line_num,
+            had_desktop_version ? "SIM" : "NAO",
+            orig_version.empty() ? "-" : orig_version.c_str(),
+            astc_removed,
+            first_bad_ext.empty() ? "-" : first_bad_ext.c_str(),
+            tex2d_replaced,
             shader_fingerprint(source).c_str());
     } else {
         write_log("OK",
-            "Shader ja compativel com GLES 3.0 (sem alteracoes necessarias) | linhas=%d | fingerprint=[%s]",
-            line_number,
-            shader_fingerprint(source).c_str());
+            "Shader ja compativel GLES 3.0 (sem alteracoes) | linhas=%d | fp=[%s]",
+            line_num, shader_fingerprint(source).c_str());
     }
 
     return result;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Ponte JNI — permite ao lado Java (Mixin) invocar o sanitizador nativo
-// sem overhead do GC do Java nem cópias desnecessárias.
-//
+// Ponte JNI
 // Classe Java: com.nexus.MobileGlues
 // Método:      String sanitizeShaderNative(String shaderSource)
 // ─────────────────────────────────────────────────────────────────────────────
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_nexus_MobileGlues_sanitizeShaderNative(JNIEnv* env, jobject /* obj */,
-                                                jstring shaderSource) {
+Java_com_nexus_MobileGlues_sanitizeShaderNative(JNIEnv* env, jobject /*obj*/,
+                                                jstring shaderSource)
+{
     if (!shaderSource) {
-        write_log("ERROR", "sanitizeShaderNative chamado com source nulo");
+        write_log("ERROR", "sanitizeShaderNative: source nulo recebido");
         return env->NewStringUTF("");
     }
-
-    const char* nativeString = env->GetStringUTFChars(shaderSource, nullptr);
-    if (!nativeString) {
-        write_log("ERROR", "GetStringUTFChars falhou — out of memory?");
+    const char* raw = env->GetStringUTFChars(shaderSource, nullptr);
+    if (!raw) {
+        write_log("ERROR", "sanitizeShaderNative: GetStringUTFChars falhou");
         return env->NewStringUTF("");
     }
-
-    std::string sanitized = sanitizeForMaliGLES(std::string(nativeString));
-    env->ReleaseStringUTFChars(shaderSource, nativeString);
-
-    return env->NewStringUTF(sanitized.c_str());
+    std::string result = sanitizeForMaliGLES(std::string(raw));
+    env->ReleaseStringUTFChars(shaderSource, raw);
+    return env->NewStringUTF(result.c_str());
 }
