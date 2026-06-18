@@ -10,70 +10,50 @@
 #include <cstring>
 #include <GL/gl.h>
 #include "log.h"
+#include "shader_header_manager.h"
 
-// Função para aplicar patches em shaders
+// Função para aplicar patches NO CORPO do shader (NÃO no cabeçalho)
 std::string patch_shader_source(const char* original_source, GLenum shader_type) {
     std::string source(original_source);
 
-    // 1. Adiciona precisão para Fragment Shaders (Mali-G52 suporta highp em fragment shaders)
-    if (shader_type == GL_FRAGMENT_SHADER) {
-        if (source.find("precision ") == std::string::npos) {
-            size_t version_pos = source.find("#version");
-            if (version_pos != std::string::npos) {
-                size_t line_end = source.find('\n', version_pos);
-                if (line_end != std::string::npos) {
-                    // Injeta precisão alta para floats e texturas
-                    source.insert(line_end + 1,
-                        "\nprecision highp float;\n"
-                        "precision highp int;\n"
-                        "precision highp sampler2D;\n"
-                        "precision highp sampler2DArray;\n"
-                        "#extension GL_EXT_shader_framebuffer_fetch : enable\n"  // Habilita FBFetch para Mali
-                    );
-                }
-            } else {
-                source.insert(0,
-                    "precision highp float;\n"
-                    "precision highp int;\n"
-                    "precision highp sampler2D;\n"
-                    "precision highp sampler2DArray;\n"
-                    "#extension GL_EXT_shader_framebuffer_fetch : enable\n"
-                );
-            }
+    // 1. Normaliza o cabeçalho primeiro (garante que #version é a primeira linha)
+    source = normalise_shader_header(source, shader_type, 320); // ES 3.2 para Mali-G52
+
+    // 2. Aplica patches NO CORPO do shader (após o cabeçalho)
+    size_t header_end = source.find("\n\n"); // Fim do cabeçalho
+    if (header_end == std::string::npos) {
+        header_end = source.find('\n');
+        if (header_end != std::string::npos) {
+            header_end = source.find('\n', header_end + 1);
         }
     }
 
-    // 2. Correção para Vertex Shaders (matrizes e uniforms comuns no Minecraft)
-    if (shader_type == GL_VERTEX_SHADER) {
-        // Verifica se o shader usa ProjectionMatrix (comum no Minecraft)
-        if (source.find("ProjectionMatrix") != std::string::npos &&
-            source.find("uniform mat4 ProjectionMatrix;") == std::string::npos) {
-            size_t version_pos = source.find("#version");
-            if (version_pos != std::string::npos) {
-                size_t line_end = source.find('\n', version_pos);
-                source.insert(line_end + 1,
-                    "\nprecision highp float;\n"
-                    "uniform mat4 ProjectionMatrix;\n"
-                    "uniform mat4 ModelViewMatrix;\n"
-                    "uniform mat4 SpriteMatrix;\n"
-                    "uniform float UPadding;\n"
-                    "uniform float VPadding;\n"
-                );
+    if (header_end != std::string::npos) {
+        std::string header = source.substr(0, header_end + 1);
+        std::string body = source.substr(header_end + 1);
+
+        // 2.1. Vertex Shaders: Adiciona uniforms ausentes (apenas no corpo)
+        if (shader_type == GL_VERTEX_SHADER) {
+            if (body.find("ProjectionMatrix") != std::string::npos &&
+                body.find("uniform mat4 ProjectionMatrix;") == std::string::npos) {
+                body = "uniform mat4 ProjectionMatrix;\n" +
+                       "uniform mat4 ModelViewMatrix;\n" +
+                       "uniform mat4 SpriteMatrix;\n" +
+                       "uniform float UPadding;\n" +
+                       "uniform float VPadding;\n" + body;
             }
+
+            // Substitui "varying" por "out" (apenas no corpo)
+            body = std::regex_replace(body, std::regex("varying\\s+([a-zA-Z0-9_]+)"), "out $1");
         }
 
-        // Remove "varying" (depreciado em GLES 3.0+) e substitui por "out"
-        source = std::regex_replace(source, std::regex("varying\\s+([a-zA-Z0-9_]+)"), "out $1");
-    }
+        // 2.2. Remove gl_ClipDistance (apenas no corpo)
+        if (shader_type == GL_VERTEX_SHADER || shader_type == GL_FRAGMENT_SHADER) {
+            body = std::regex_replace(body, std::regex("gl_ClipDistance\\[[0-9]+\\]"), "1.0");
+        }
 
-    // 3. Remove instruções não suportadas em GLES 3.2 (ex.: gl_ClipDistance)
-    if (shader_type == GL_VERTEX_SHADER || shader_type == GL_FRAGMENT_SHADER) {
-        source = std::regex_replace(source, std::regex("gl_ClipDistance\\[[0-9]+\\]"), "1.0");
-    }
-
-    // 4. Adiciona extensões específicas para Mali-G52
-    if (source.find("#extension GL_EXT_texture_compression_astc") == std::string::npos) {
-        source.insert(0, "#extension GL_EXT_texture_compression_astc : enable\n");
+        // 2.3. Reconstroi o shader
+        source = header + body;
     }
 
     return source;
