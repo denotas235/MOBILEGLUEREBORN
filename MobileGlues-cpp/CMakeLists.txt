@@ -72,7 +72,7 @@ endif()
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang" AND NOT MATCHES "AppleClang")
     add_compile_options(-O3 -ffunction-sections -fdata-sections)
     add_link_options(-Wl,--gc-sections)
-elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+elif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 #    add_compile_options(/O2)
 else ()
     add_compile_options(-O2)
@@ -97,6 +97,7 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
     gl/log.cpp
     gl/program.cpp
     gl/shader.cpp
+    gl/shader_patcher.cpp
     gl/framebuffer.cpp
     gl/texture.cpp
     gl/extension_scanner.cpp
