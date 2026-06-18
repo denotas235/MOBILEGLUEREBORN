@@ -135,6 +135,8 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/gl
+    ${CMAKE_CURRENT_SOURCE_DIR}/gl/glsl
     ./includes
     ./3rdparty/glm
     ./3rdparty/xxhash)

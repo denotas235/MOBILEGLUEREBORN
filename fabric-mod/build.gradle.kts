@@ -1,5 +1,5 @@
 plugins {
-    id("fabric-loom") version "1.9.2"
+    id("fabric-loom") version "1.10-SNAPSHOT"
     id("maven-publish")
 }
 
@@ -16,12 +16,16 @@ repositories {
 }
 
 dependencies {
-    // Minecraft 1.21.1 com Mojang Official Mappings
-    minecraft("com.mojang:minecraft:1.21.1")
+    // Minecraft 1.21.11 com Mojang Official Mappings
+    // Nota: 1.21.11 é a última versão com suporte Yarn/Intermediary — daí Mojang Mappings
+    minecraft("com.mojang:minecraft:1.21.11")
     mappings(loom.officialMojangMappings())
 
-    // Fabric Loader — Mixin não precisa de Fabric API
+    // Fabric Loader 0.16.9+
     modImplementation("net.fabricmc:fabric-loader:0.16.9")
+
+    // Fabric API para 1.21.11 (última versão estável)
+    modImplementation("net.fabricmc.fabric-api:fabric-api:0.141.4+1.21.11")
 }
 
 tasks.processResources {
