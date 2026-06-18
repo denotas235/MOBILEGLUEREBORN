@@ -6,10 +6,11 @@ jobs:
   build-android:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout repository with submodules
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
 
       - name: Setup Android NDK
         uses: nttld/setup-ndk@v1
@@ -21,7 +22,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build
 
-      - name: Build MobileGlues for Android arm64-v8a (TECNO KH7)
+      - name: Configure CMake for arm64-v8a
         run: |
           cd MobileGlues-cpp
           cmake -B build_arm64 \
@@ -30,10 +31,15 @@ jobs:
             -DANDROID_PLATFORM=android-31 \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_FLAGS="-O3 -fvisibility=hidden -funwind-tables -g -D_THREAD_SAFE -fPIC" \
-            -DCMAKE_C_FLAGS="-w -g -std=gnu99 -funwind-tables -fvisibility=hidden"
+            -DCMAKE_C_FLAGS="-w -g -std=gnu99 -funwind-tables -fvisibility=hidden" \
+            -DBUILD_EXTERNAL=OFF
+
+      - name: Build for arm64-v8a
+        run: |
+          cd MobileGlues-cpp
           cmake --build build_arm64 --config Release --target mobileglues -- -j4
 
-      - name: Build MobileGlues for Android armeabi-v7a
+      - name: Configure CMake for armeabi-v7a
         run: |
           cd MobileGlues-cpp
           cmake -B build_arm32 \
@@ -42,7 +48,12 @@ jobs:
             -DANDROID_PLATFORM=android-21 \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_FLAGS="-O3 -fvisibility=hidden -funwind-tables -g -D_THREAD_SAFE -fPIC" \
-            -DCMAKE_C_FLAGS="-w -g -std=gnu99 -funwind-tables -fvisibility=hidden"
+            -DCMAKE_C_FLAGS="-w -g -std=gnu99 -funwind-tables -fvisibility=hidden" \
+            -DBUILD_EXTERNAL=OFF
+
+      - name: Build for armeabi-v7a
+        run: |
+          cd MobileGlues-cpp
           cmake --build build_arm32 --config Release --target mobileglues -- -j4
 
       - name: Upload arm64-v8a SO
