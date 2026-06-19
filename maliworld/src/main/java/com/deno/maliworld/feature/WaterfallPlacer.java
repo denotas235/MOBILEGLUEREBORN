@@ -8,12 +8,12 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.chunk.ChunkAccess;
 
 /**
- * Places waterfalls where rivers/streams reach cliff edges.
- * Detects steep Y-drops and fills the vertical space with water source blocks.
+ * Places waterfalls where rivers reach cliff edges.
+ * MC 1.21.11: ChunkAccess.setBlockState takes int flags (0 = no propagation).
  */
 public final class WaterfallPlacer {
 
-    private static final double FALL_FREQ  = 0.004;
+    private static final double FALL_FREQ = 0.004;
 
     private WaterfallPlacer() {}
 
@@ -23,48 +23,37 @@ public final class WaterfallPlacer {
 
     /**
      * Determines if a waterfall exists at this column.
-     * A waterfall occurs when:
-     * 1. This column has a significant drop (cliff)
-     * 2. A river passes nearby uphill
-     *
-     * @param surfaceY  Y at this column
-     * @param adjacentY Y of an adjacent higher column
      */
-    public static boolean isWaterfallColumn(int x, int z, int surfaceY, int adjacentY) {
-        if (adjacentY - surfaceY < 15) return false; // need significant cliff
+    public static boolean isWaterfall(int x, int z, int surfaceY, int adjacentY) {
+        int drop = surfaceY - adjacentY;
+        if (drop < 8) return false;
         double n = SimplexNoise.noise(x * FALL_FREQ, z * FALL_FREQ);
-        return n > 0.5; // only some cliff columns become waterfalls
+        return n > 0.6;
     }
 
     /**
-     * Fill a waterfall column from topY down to bottomY with water.
+     * Place waterfall water column. MC 1.21.11: setBlockState int flags.
      *
-     * @param chunk    chunk to modify
-     * @param x        local X [0-15]
-     * @param z        local Z [0-15]
-     * @param topY     top of fall
-     * @param bottomY  base of fall (pool)
+     * @param topY    top of fall
+     * @param bottomY base of fall (pool)
      */
     public static void placeWaterfallColumn(ChunkAccess chunk, int x, int z,
                                              int topY, int bottomY) {
-        // Water column
         for (int y = bottomY + 1; y <= topY; y++) {
-            BlockPos pos = new BlockPos(x, y, z);
+            BlockPos pos = new BlockPos(x & 15, y, z & 15);
             if (chunk.getBlockState(pos).isAir()) {
-                chunk.setBlockState(pos, Blocks.WATER.defaultBlockState(), false);
+                chunk.setBlockState(pos, Blocks.WATER.defaultBlockState(), 0);
             }
         }
-        // Pool at base: water + gravel floor
         if (bottomY >= 1) {
-            chunk.setBlockState(new BlockPos(x, bottomY, z),
-                Blocks.WATER.defaultBlockState(), false);
-            chunk.setBlockState(new BlockPos(x, bottomY - 1, z),
-                Blocks.GRAVEL.defaultBlockState(), false);
+            chunk.setBlockState(new BlockPos(x & 15, bottomY, z & 15),
+                Blocks.WATER.defaultBlockState(), 0);
+            chunk.setBlockState(new BlockPos(x & 15, bottomY - 1, z & 15),
+                Blocks.GRAVEL.defaultBlockState(), 0);
         }
-        // Moss on surrounding blocks
-        BlockPos sidePos = new BlockPos(x, topY - 2, z);
+        BlockPos sidePos = new BlockPos(x & 15, topY - 2, z & 15);
         if (!chunk.getBlockState(sidePos).isAir()) {
-            chunk.setBlockState(sidePos, Blocks.MOSS_BLOCK.defaultBlockState(), false);
+            chunk.setBlockState(sidePos, Blocks.MOSS_BLOCK.defaultBlockState(), 0);
         }
     }
 }

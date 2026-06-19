@@ -2,11 +2,16 @@ package com.deno.maliworld.registry;
 
 import com.deno.maliworld.MaliWorldMod;
 import com.deno.maliworld.config.MaliWorldConfig;
-import com.deno.maliworld.structure.*;
+import com.deno.maliworld.structure.AncientTemple;
+import com.deno.maliworld.structure.MountainFortress;
+import com.deno.maliworld.structure.NaturalRuins;
+import com.deno.maliworld.structure.RealisticVillage;
+import com.deno.maliworld.structure.UndergroundCity;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 
 /**
- * Registers structure generation hooks (villages, ruins, fortresses, temples, underground cities).
+ * Registers structure world-load hooks.
+ * Explicit imports (not wildcard) to avoid "variable X not found" errors from javac.
  */
 public final class StructureRegistry {
 

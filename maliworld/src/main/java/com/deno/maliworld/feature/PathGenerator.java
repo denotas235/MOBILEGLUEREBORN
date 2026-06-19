@@ -9,9 +9,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 
 /**
- * Generates organic dirt-path trails connecting structures and points of interest.
- * Paths trace noise centrelines and follow terrain naturally.
- * MC 1.21.11: replaced BlockTags.REPLACEABLE_BY_TREES with explicit air/plant checks.
+ * Organic dirt-path trails through terrain.
+ * MC 1.21.11 fixes:
+ *   - Blocks.GRASS removed → Blocks.SHORT_GRASS
+ *   - ChunkAccess.setBlockState(pos, state, int) — int flags (0 = no updates)
  */
 public final class PathGenerator {
 
@@ -24,7 +25,6 @@ public final class PathGenerator {
         MaliWorldMod.LOGGER.debug("[MaliWorld] PathGenerator pronto para seed={}", seed);
     }
 
-    /** Returns true if a path passes through this column. */
     public static boolean isPath(int x, int z, int surfaceY) {
         if (surfaceY <= 63) return false;
         double n  = Math.abs(SimplexNoise.noise(x * PATH_FREQ, z * PATH_FREQ));
@@ -33,28 +33,35 @@ public final class PathGenerator {
         return n < PATH_THRESH && n <= nx && n <= nz;
     }
 
-    /** Place a path block and clear vegetation above it. */
+    /** Place path block and clear vegetation above. */
     public static void placePath(ChunkAccess chunk, int x, int z, int surfaceY) {
-        BlockPos surfPos = new BlockPos(x & 15, surfaceY, z & 15);
-        chunk.setBlockState(surfPos, Blocks.DIRT_PATH.defaultBlockState(), false);
+        int lx = x & 15;
+        int lz = z & 15;
+        chunk.setBlockState(new BlockPos(lx, surfaceY, lz),
+            Blocks.DIRT_PATH.defaultBlockState(), 0);
 
-        // Clear vegetation one block above (explicit block checks, no tag needed)
-        BlockPos above = new BlockPos(x & 15, surfaceY + 1, z & 15);
+        // Clear vegetation using explicit block checks.
+        // MC 1.20.3+: Blocks.GRASS renamed to Blocks.SHORT_GRASS
+        BlockPos above = new BlockPos(lx, surfaceY + 1, lz);
         BlockState aboveState = chunk.getBlockState(above);
-        if (aboveState.isAir()
-            || aboveState.is(Blocks.GRASS)
-            || aboveState.is(Blocks.TALL_GRASS)
-            || aboveState.is(Blocks.FERN)
-            || aboveState.is(Blocks.LARGE_FERN)
-            || aboveState.is(Blocks.DEAD_BUSH)
-            || aboveState.is(Blocks.POPPY)
-            || aboveState.is(Blocks.DANDELION)
-            || aboveState.is(Blocks.CORNFLOWER)
-            || aboveState.is(Blocks.AZURE_BLUET)
-            || aboveState.is(Blocks.OXEYE_DAISY)
-            || aboveState.is(Blocks.ALLIUM)
-            || aboveState.is(Blocks.BLUE_ORCHID)) {
-            chunk.setBlockState(above, Blocks.AIR.defaultBlockState(), false);
+        if (isVegetation(aboveState)) {
+            chunk.setBlockState(above, Blocks.AIR.defaultBlockState(), 0);
         }
+    }
+
+    private static boolean isVegetation(BlockState state) {
+        return state.isAir()
+            || state.is(Blocks.SHORT_GRASS)
+            || state.is(Blocks.TALL_GRASS)
+            || state.is(Blocks.FERN)
+            || state.is(Blocks.LARGE_FERN)
+            || state.is(Blocks.DEAD_BUSH)
+            || state.is(Blocks.POPPY)
+            || state.is(Blocks.DANDELION)
+            || state.is(Blocks.CORNFLOWER)
+            || state.is(Blocks.AZURE_BLUET)
+            || state.is(Blocks.OXEYE_DAISY)
+            || state.is(Blocks.ALLIUM)
+            || state.is(Blocks.BLUE_ORCHID);
     }
 }

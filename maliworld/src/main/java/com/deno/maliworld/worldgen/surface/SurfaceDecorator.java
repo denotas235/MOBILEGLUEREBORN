@@ -8,119 +8,82 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 
 /**
- * Contextual surface block selection.
- * Chooses surface blocks based on: altitude, slope, moisture, biome zone.
+ * Contextual surface block placement.
+ * Chooses blocks based on altitude, slope, temperature, humidity.
+ * MC 1.21.11: ChunkAccess.setBlockState(BlockPos, BlockState, int) — 0 = no-update flags.
  */
 public final class SurfaceDecorator {
 
     private SurfaceDecorator() {}
 
     /**
-     * Determine the appropriate surface block at position given terrain context.
-     *
-     * @param chunk   chunk being decorated
-     * @param pos     block position (surface level)
-     * @param y       surface Y level
-     * @param slope   slope [0-1] from TerrainShaper
-     * @param temp    climate temperature
-     * @param humidity climate humidity
+     * Determine the appropriate surface block at this column.
      */
     public static BlockState getSurfaceBlock(ChunkAccess chunk, BlockPos pos,
                                               int y, double slope,
                                               float temp, float humidity) {
-        // Snow: above snow line with cold temperature
-        if (y >= MountainBuilder.SNOW_LINE_Y && temp < 0.0f) {
-            return Blocks.SNOW_BLOCK.defaultBlockState();
-        }
-
-        // Steep slope: exposed stone
-        if (slope > 0.6) {
+        // High slope → stone/cobblestone (cliff)
+        if (slope > 0.75) {
             return Blocks.STONE.defaultBlockState();
         }
-        if (slope > 0.4) {
+        if (slope > 0.5) {
             return Blocks.COBBLESTONE.defaultBlockState();
         }
 
-        // Beach/coastal area (near sea level)
-        if (y <= TerrainShaper.BEACH_Y + 2 && y >= TerrainShaper.SEA_LEVEL) {
+        // High altitude → snow / stone
+        if (y >= 160) {
+            return temp < 0.2f ? Blocks.SNOW_BLOCK.defaultBlockState() : Blocks.STONE.defaultBlockState();
+        }
+        if (y >= 120) {
+            return slope > 0.3 ? Blocks.GRAVEL.defaultBlockState() : Blocks.COARSE_DIRT.defaultBlockState();
+        }
+
+        // Below sea level → sand/gravel
+        if (y < 63) {
+            return Blocks.GRAVEL.defaultBlockState();
+        }
+
+        // Dry/hot (desert-ish)
+        if (temp > 0.75f && humidity < 0.3f) {
             return Blocks.SAND.defaultBlockState();
         }
 
-        // Desert: hot and dry
-        if (temp >= 2.0f && humidity < 0.3f) {
-            return Blocks.SAND.defaultBlockState();
+        // Wet/cold (swamp/tundra)
+        if (temp < 0.2f) {
+            return humidity > 0.6f ? Blocks.PODZOL.defaultBlockState() : Blocks.COARSE_DIRT.defaultBlockState();
         }
 
-        // Savanna: warm and dry
-        if (temp >= 1.0f && humidity < 0.3f) {
-            return slope > 0.2 ? Blocks.DIRT.defaultBlockState()
-                               : Blocks.GRASS_BLOCK.defaultBlockState();
-        }
-
-        // Jungle floor
-        if (temp >= 1.5f && humidity > 0.6f) {
-            return Blocks.GRASS_BLOCK.defaultBlockState();
-        }
-
-        // Taiga/cold forest: podzol-like
-        if (temp < 0.3f && humidity > 0.4f) {
-            return Blocks.PODZOL.defaultBlockState();
-        }
-
-        // Frozen tundra
-        if (temp < -0.5f) {
-            return y > TerrainShaper.SEA_LEVEL + 2
-                ? Blocks.SNOW_BLOCK.defaultBlockState()
-                : Blocks.ICE.defaultBlockState();
-        }
-
-        // Mild slopes: coarse dirt
-        if (slope > 0.25) {
-            return Blocks.COARSE_DIRT.defaultBlockState();
-        }
-
-        // Default: grass
+        // Normal → grass
         return Blocks.GRASS_BLOCK.defaultBlockState();
     }
 
     /**
-     * Subsurface block (1-3 layers below surface).
+     * Choose subsurface block (1-3 blocks below surface).
      */
     public static BlockState getSubsurfaceBlock(double slope, float temp) {
-        if (slope > 0.5)  return Blocks.STONE.defaultBlockState();
-        if (temp < -0.5f) return Blocks.DIRT.defaultBlockState();
+        if (slope > 0.5) return Blocks.STONE.defaultBlockState();
+        if (temp > 0.75f) return Blocks.SANDSTONE.defaultBlockState();
         return Blocks.DIRT.defaultBlockState();
     }
 
     /**
-     * Apply contextual surface decoration to a chunk column.
-     * Called from SurfaceBuilderMixin after vanilla surface is set.
-     *
-     * @param chunk   target chunk
-     * @param worldX  world X coordinate of column
-     * @param worldZ  world Z coordinate of column
-     * @param surfaceY Y level of the surface block
-     * @param slope    terrain slope [0-1]
-     * @param temp     temperature
-     * @param humidity humidity
+     * Apply surface decoration at this column.
+     * MC 1.21.11: setBlockState flags parameter is int (0 = suppress updates).
      */
     public static void decorate(ChunkAccess chunk, int worldX, int worldZ,
                                  int surfaceY, double slope, float temp, float humidity) {
         if (surfaceY <= 0) return;
-        BlockPos pos = new BlockPos(worldX, surfaceY, worldZ);
+        BlockPos pos = new BlockPos(worldX & 15, surfaceY, worldZ & 15);
 
-        // Set surface block
         BlockState surface = getSurfaceBlock(chunk, pos, surfaceY, slope, temp, humidity);
-        chunk.setBlockState(pos, surface, false);
+        chunk.setBlockState(pos, surface, 0);
 
-        // Set subsurface layers (1-3 below)
         BlockState sub = getSubsurfaceBlock(slope, temp);
         for (int dy = 1; dy <= 3; dy++) {
-            BlockPos below = pos.below(dy);
+            BlockPos below = new BlockPos(worldX & 15, surfaceY - dy, worldZ & 15);
             BlockState current = chunk.getBlockState(below);
-            // Only replace stone/grass with contextual subsurface
-            if (!current.isAir() && current != Blocks.BEDROCK.defaultBlockState()) {
-                chunk.setBlockState(below, sub, false);
+            if (!current.isAir() && !current.is(Blocks.BEDROCK)) {
+                chunk.setBlockState(below, sub, 0);
             }
         }
     }

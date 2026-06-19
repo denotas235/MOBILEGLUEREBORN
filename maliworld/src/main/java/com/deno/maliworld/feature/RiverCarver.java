@@ -5,13 +5,11 @@ import com.deno.maliworld.worldgen.noise.SimplexNoise;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
-
-import java.util.Random;
+import net.minecraft.world.level.chunk.ChunkAccess;
 
 /**
  * Carves sinuous rivers through terrain.
- * Rivers use a meander algorithm: each step deflects by a noise-driven angle.
- * Rivers flow from high altitude toward sea level, widening as they descend.
+ * MC 1.21.11: ChunkAccess.setBlockState(BlockPos, BlockState, int) — third param is int flags.
  */
 public final class RiverCarver {
 
@@ -28,62 +26,50 @@ public final class RiverCarver {
 
     /**
      * Determines if a river passes through position (x, z).
-     * Uses gradient noise to find river centrelines.
-     *
-     * @return river width at this position (0 = no river, >0 = river of that width)
+     * Returns the river half-width (0 = no river).
      */
     public static int getRiverWidth(int x, int z) {
-        // Sample noise at this position and neighbors to find local minima (river centrelines)
-        double n  = Math.abs(SimplexNoise.noise(x * MEANDER_FREQ, z * MEANDER_FREQ));
-        double nx = Math.abs(SimplexNoise.noise((x+1) * MEANDER_FREQ, z * MEANDER_FREQ));
-        double nz = Math.abs(SimplexNoise.noise(x * MEANDER_FREQ, (z+1) * MEANDER_FREQ));
+        // Quantize to river grid
+        int gridX = (int)Math.round((double)x / RIVER_SPACING) * RIVER_SPACING;
+        int gridZ = (int)Math.round((double)z / RIVER_SPACING) * RIVER_SPACING;
 
-        // River centre: value near 0, lower than neighbors
-        if (n < 0.04 && n <= nx && n <= nz) {
-            // Width scales with downstream distance (lower Y = wider)
-            return 3 + (int)(n * 0); // base width 3
-        }
-        if (n < 0.07 && n <= nx && n <= nz) return 2;
-        if (n < 0.10 && n <= nx && n <= nz) return 1;
+        // River centreline noise
+        double cx = gridX + SimplexNoise.noise(gridX * 0.001, gridZ * 0.001) * 200;
+        double cz = gridZ + SimplexNoise.noise(gridX * 0.001 + 100, gridZ * 0.001 + 100) * 200;
+
+        double dist = Math.sqrt((x - cx)*(x - cx) + (z - cz)*(z - cz));
+
+        // Width by noise
+        double widthNoise = SimplexNoise.noise(x * MEANDER_FREQ, z * MEANDER_FREQ);
+        int maxWidth = (int)(3 + widthNoise * 4); // 3-7 blocks
+        if (dist < maxWidth) return maxWidth - (int)dist;
         return 0;
     }
 
     /**
-     * Carve a river column at (x, surfaceY, z).
-     * Called from NoiseChunkGeneratorMixin after terrain is generated.
-     *
-     * @param chunk  chunk to modify
-     * @param x      world X
-     * @param z      world Z
-     * @param surfaceY  surface Y at this column
-     * @param width  river width in blocks (from getRiverWidth)
+     * Carve a river column into the chunk.
+     * MC 1.21.11: third arg to setBlockState is int flags (0 = no updates).
      */
-    public static void carveColumn(net.minecraft.world.level.chunk.ChunkAccess chunk,
-                                    int x, int z, int surfaceY, int width) {
-        int riverY = Math.min(surfaceY, 63); // rivers at or below sea level
+    public static void carveColumn(ChunkAccess chunk, int x, int z, int surfaceY, int width) {
+        int riverY = Math.min(surfaceY, 63);
         int depth  = 2 + width;
 
-        // Carve the river bed
         for (int dy = 0; dy < depth; dy++) {
             int y = riverY - dy;
             if (y < 1) break;
             BlockPos pos = new BlockPos(x & 15, y, z & 15);
             if (dy == 0) {
-                // River surface: water
-                chunk.setBlockState(pos, Blocks.WATER.defaultBlockState(), false);
+                chunk.setBlockState(pos, Blocks.WATER.defaultBlockState(), 0);
             } else if (dy == depth - 1) {
-                // River bed: gravel
-                chunk.setBlockState(pos, Blocks.GRAVEL.defaultBlockState(), false);
+                chunk.setBlockState(pos, Blocks.GRAVEL.defaultBlockState(), 0);
             } else {
-                // River water
-                chunk.setBlockState(pos, Blocks.WATER.defaultBlockState(), false);
+                chunk.setBlockState(pos, Blocks.WATER.defaultBlockState(), 0);
             }
         }
 
-        // Sand banks on edges
         BlockPos bankPos = new BlockPos(x & 15, riverY, z & 15);
         if (width > 1) {
-            chunk.setBlockState(bankPos, Blocks.SAND.defaultBlockState(), false);
+            chunk.setBlockState(bankPos, Blocks.SAND.defaultBlockState(), 0);
         }
     }
 }
