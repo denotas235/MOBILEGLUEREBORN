@@ -1,22 +1,24 @@
 package com.deno.maliworld.mixin.feature;
 
 import com.deno.maliworld.config.MaliWorldConfig;
-import com.deno.maliworld.feature.LakeGenerator;
-import net.minecraft.world.level.levelgen.feature.LakeFeature;
 import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
+import net.minecraft.world.level.levelgen.feature.SpringFeature;
+import net.minecraft.world.level.levelgen.feature.configurations.SpringConfiguration;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Hooks into LakeFeature.place() to enhance vanilla lake generation.
- * Lake carving is primarily handled in NoiseChunkGeneratorMixin.
- * This mixin ensures the LakeGenerator is notified of vanilla lake placements.
+ * Lake enhancement mixin (MC 1.21.11).
+ * LakeFeature was removed in 1.18+; lakes are now biome terrain topology.
+ * MaliWorld lake carving happens in NoiseChunkGeneratorMixin instead.
+ * This class is kept as a no-op placeholder for API compatibility.
  *
- * require=0: LakeFeature was deprecated in 1.18+ and may not exist in 1.21.11.
+ * Targets SpringFeature (water/lava springs still exist in 1.21.11).
+ * require=0: degrades gracefully.
  */
-@Mixin(value = LakeFeature.class, remap = true)
+@Mixin(value = SpringFeature.class, remap = true)
 public abstract class LakeMixin {
 
     @Inject(
@@ -24,12 +26,9 @@ public abstract class LakeMixin {
         at = @At("RETURN"),
         require = 0
     )
-    private void maliworld$afterLakePlace(
-            FeaturePlaceContext<LakeFeature.Configuration> context,
+    private void maliworld$onSpringPlace(
+            FeaturePlaceContext<SpringConfiguration> context,
             CallbackInfoReturnable<Boolean> cir) {
-
-        if (!MaliWorldConfig.LAKES_ENABLED) return;
-        // Lake was placed — our LakeGenerator in NoiseChunkGeneratorMixin handles
-        // additional lake types. Vanilla lake is kept as-is.
+        // Lake carving is done in NoiseChunkGeneratorMixin — nothing here.
     }
 }

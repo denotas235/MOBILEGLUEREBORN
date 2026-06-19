@@ -1,27 +1,24 @@
 package com.deno.maliworld.mixin.feature;
 
 import com.deno.maliworld.config.MaliWorldConfig;
-import com.deno.maliworld.feature.RiverCarver;
-import com.deno.maliworld.worldgen.terrain.TerrainShaper;
-import net.minecraft.world.level.WorldGenLevel;
-import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraft.world.level.levelgen.feature.configurations.FeatureConfiguration;
-import net.minecraft.world.level.levelgen.feature.RiverFeature;
 import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
-import net.minecraft.world.level.levelgen.feature.NoneFeatureConfiguration;
+import net.minecraft.world.level.levelgen.feature.ReplaceBlockFeature;
+import net.minecraft.world.level.levelgen.feature.configurations.ReplaceBlockConfiguration;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Hooks into RiverFeature.place() to enhance vanilla river generation.
- * The vanilla river feature still runs; we only add additional detail
- * (banks, gravel beds) via RiverCarver.
+ * River enhancement mixin (MC 1.21.11).
+ * RiverFeature was removed in 1.18+; rivers are now biome-level topology.
+ * MaliWorld river carving happens in NoiseChunkGeneratorMixin instead.
+ * This class is kept for future expansion; injection is a no-op.
  *
- * require=0: RiverFeature may not exist in 1.21.11, degrades safely.
+ * Targets ReplaceBlockFeature as a safe, always-present hook.
+ * require=0: degrades gracefully.
  */
-@Mixin(value = RiverFeature.class, remap = true)
+@Mixin(value = ReplaceBlockFeature.class, remap = true)
 public abstract class RiverMixin {
 
     @Inject(
@@ -29,18 +26,9 @@ public abstract class RiverMixin {
         at = @At("RETURN"),
         require = 0
     )
-    private void maliworld$afterRiverPlace(
-            FeaturePlaceContext<NoneFeatureConfiguration> context,
+    private void maliworld$onReplaceBlock(
+            FeaturePlaceContext<ReplaceBlockConfiguration> context,
             CallbackInfoReturnable<Boolean> cir) {
-
-        if (!MaliWorldConfig.RIVERS_ENABLED || !cir.getReturnValue()) return;
-
-        try {
-            // River was placed — apply additional bank detail around placement origin
-            net.minecraft.core.BlockPos origin = context.origin();
-            WorldGenLevel level = context.level();
-            // River enhancement is primarily handled in NoiseChunkGeneratorMixin.
-            // Here we just ensure the vanilla placement is preserved.
-        } catch (Exception ignored) {}
+        // River carving is done in NoiseChunkGeneratorMixin — nothing here.
     }
 }

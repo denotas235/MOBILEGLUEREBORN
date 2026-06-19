@@ -2,15 +2,14 @@ package com.deno.maliworld.loot;
 
 import com.deno.maliworld.MaliWorldMod;
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 
 /**
- * Injects MaliWorld contextual loot using Fabric API LootTableEvents v3.
- * Adds thematic loot pools to vanilla structure chests.
+ * Injects MaliWorld contextual loot into vanilla loot tables.
+ * Fabric API LootTableEvents v3 (0.141.4+1.21.11).
  *
- * Fabric API 0.141.4+1.21.11 uses net.fabricmc.fabric.api.loot.v3.
- * key.location() returns Identifier (MC 1.21.11 Mojang name for ResourceLocation).
+ * Uses ResourceKey.equals() directly — avoids deprecated/removed location() call.
+ * BuiltInLootTables fields are ResourceKey<LootTable> in 1.21.11.
  */
 public final class LootTableInjector {
 
@@ -20,31 +19,15 @@ public final class LootTableInjector {
         LootTableEvents.MODIFY.register((key, tableBuilder, source, registries) -> {
             if (!source.isBuiltin()) return;
 
-            Identifier id = key.location();
-            String path   = id.getPath();
-
-            // Dungeons → ruin-style supplement
-            if (path.equals("chests/simple_dungeon")) {
+            if (key.equals(BuiltInLootTables.SIMPLE_DUNGEON)) {
                 tableBuilder.pool(ContextualLoot.ruinPool());
-            }
-            // Jungle temple → temple loot
-            else if (path.equals("chests/jungle_temple")) {
+            } else if (key.equals(BuiltInLootTables.JUNGLE_TEMPLE)) {
                 tableBuilder.pool(ContextualLoot.templePool());
-            }
-            // Desert pyramid → temple loot
-            else if (path.equals("chests/desert_pyramid")) {
+            } else if (key.equals(BuiltInLootTables.DESERT_PYRAMID)) {
                 tableBuilder.pool(ContextualLoot.templePool());
-            }
-            // Ancient city → underground city loot
-            else if (path.equals("chests/ancient_city")) {
+            } else if (key.equals(BuiltInLootTables.ANCIENT_CITY)) {
                 tableBuilder.pool(ContextualLoot.undergroundCityPool());
-            }
-            // Stronghold → fortress supplement
-            else if (path.equals("chests/stronghold_crossing")) {
-                tableBuilder.pool(ContextualLoot.fortressPool());
-            }
-            // Village armorer → fortress style
-            else if (path.contains("chests/village") && path.contains("armorer")) {
+            } else if (key.equals(BuiltInLootTables.STRONGHOLD_CROSSING)) {
                 tableBuilder.pool(ContextualLoot.fortressPool());
             }
         });
