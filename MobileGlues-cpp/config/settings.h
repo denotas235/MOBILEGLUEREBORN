@@ -13,14 +13,8 @@
 #include <sstream>
 #include <algorithm>
 #include <cctype>
+#include <cstddef>
 #include "optimization_settings.h"
-
-
-#if !defined(__APPLE__)
-#include <__stddef_size_t.h>
-#else
-typedef unsigned long size_t;
-#endif
 
 #define DEFAULT_GL_VERSION 40
 
