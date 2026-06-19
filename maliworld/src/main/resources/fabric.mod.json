@@ -1,24 +1,19 @@
 {
   "schemaVersion": 1,
   "id": "maliworld",
-  "version": "1.0.0",
+  "version": "${version}",
   "name": "MaliWorld",
-  "description": "Terreno realista, estruturas adaptadas e otimizações para Mali-G52 - MC 1.21.11",
-  "authors": [
-    "Deno"
-  ],
+  "description": "Terreno realista, estruturas e otimizações para Mali-G52 — MC 1.21.11",
+  "authors": ["Deno"],
   "environment": "*",
   "entrypoints": {
-    "main": [
-      "com.deno.maliworld.MaliWorldMod"
-    ]
+    "main": ["com.deno.maliworld.MaliWorldMod"],
+    "client": ["com.deno.maliworld.MaliWorldMod"]
   },
-  "mixins": [
-    "maliworld.mixins.json"
-  ],
+  "mixins": ["maliworld.mixins.json"],
   "depends": {
     "fabricloader": ">=0.19.3",
     "fabric-api": "*",
-    "minecraft": "~1.21.11"
+    "minecraft": ">=1.21.11"
   }
 }

@@ -11,99 +11,137 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/**
- * JSON configuration for MaliWorld.
- * File: config/maliworld.json
- * All fields are public static so systems can read them directly.
- */
 public class MaliWorldConfig {
 
-    // --- Terrain ---
-    public static boolean ENHANCED_TERRAIN    = true;
-    public static int     TERRAIN_OCTAVES     = 6;
-    public static float   MOUNTAIN_SCALE      = 1.5f;
-    public static float   CONTINENT_SCALE     = 1.0f;
-    public static float   DOMAIN_WARP_STRENGTH= 0.8f;
+    public static boolean ENHANCED_TERRAIN     = true;
+    public static int     TERRAIN_OCTAVES      = 6;
+    public static float   MOUNTAIN_SCALE       = 1.5f;
+    public static float   CONTINENT_SCALE      = 1.0f;
 
-    // --- Features ---
-    public static boolean RIVERS_ENABLED      = true;
-    public static boolean LAKES_ENABLED       = true;
-    public static boolean WATERFALLS_ENABLED  = true;
-    public static boolean PATHS_ENABLED       = true;
-    public static boolean CAVES_ENHANCED      = true;
+    public static boolean RIVERS_ENABLED       = true;
+    public static boolean LAKES_ENABLED        = true;
+    public static boolean WATERFALLS_ENABLED   = true;
+    public static boolean PATHS_ENABLED        = true;
+    public static boolean CAVES_ENHANCED       = true;
 
-    // --- Structures ---
-    public static boolean REALISTIC_VILLAGES  = true;
-    public static boolean RUINS_ENABLED       = true;
-    public static boolean FORTRESS_ENABLED    = true;
-    public static boolean TEMPLES_ENABLED     = true;
-    public static boolean UNDERGROUND_CITIES  = false; // heavy, off by default
+    public static boolean REALISTIC_VILLAGES   = true;
+    public static boolean RUINS_ENABLED        = true;
+    public static boolean FORTRESS_ENABLED     = true;
+    public static boolean TEMPLES_ENABLED      = true;
+    public static boolean UNDERGROUND_CITIES   = false;
 
-    // --- Optimizations ---
-    public static boolean GREEDY_MESHING      = true;
-    public static boolean ASYNC_LIGHTING      = true;
-    public static boolean ASYNC_PATHFINDING   = true;
-    public static boolean MOB_TICK_THROTTLE   = true;
-    public static int     MOB_NEAR_DISTANCE   = 32;
-    public static int     MOB_FAR_DISTANCE    = 64;
-    public static boolean ELYTRA_PREDICTOR    = true;
-    public static boolean LIMIT_EXPLOSIONS    = true;
-    public static int     ENTITY_CULL_MOB_DIST= 48;
-    public static int     ENTITY_CULL_ITEM_DIST= 24;
+    public static boolean GREEDY_MESHING       = true;
+    public static boolean ASYNC_LIGHTING       = true;
+    public static boolean ASYNC_PATHFINDING    = true;
+    public static boolean MOB_TICK_THROTTLE    = true;
+    public static int     MOB_NEAR_DISTANCE    = 32;
+    public static int     MOB_FAR_DISTANCE     = 64;
+    public static boolean ELYTRA_PREDICTOR     = true;
+    public static boolean LIMIT_EXPLOSIONS     = true;
+    public static int     EXPLOSION_MAX_RAYS   = 256;
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static Path configPath;
 
     public static void load() {
-        configPath = FabricLoader.getInstance().getConfigDir().resolve("maliworld.json");
-        if (Files.exists(configPath)) {
-            try (Reader r = Files.newBufferedReader(configPath)) {
-                MaliWorldConfig loaded = GSON.fromJson(r, MaliWorldConfig.class);
-                if (loaded != null) applyFrom(loaded);
-                MaliWorldMod.LOGGER.info("[MaliWorld] Config carregada de {}", configPath);
-            } catch (IOException | com.google.gson.JsonSyntaxException e) {
-                MaliWorldMod.LOGGER.warn("[MaliWorld] Falha ao ler config, usando padroes: {}", e.getMessage());
+        Path cfgPath = FabricLoader.getInstance().getConfigDir().resolve("maliworld.json");
+        if (Files.exists(cfgPath)) {
+            try (Reader r = Files.newBufferedReader(cfgPath)) {
+                ConfigData data = GSON.fromJson(r, ConfigData.class);
+                if (data != null) applyData(data);
+            } catch (IOException e) {
+                MaliWorldMod.LOGGER.warn("[MaliWorld] Falha ao ler config: {}", e.getMessage());
             }
         } else {
             save();
-            MaliWorldMod.LOGGER.info("[MaliWorld] Config criada em {}", configPath);
         }
     }
 
     public static void save() {
-        if (configPath == null) return;
-        try (Writer w = Files.newBufferedWriter(configPath)) {
-            GSON.toJson(new MaliWorldConfig(), w);
+        Path cfgPath = FabricLoader.getInstance().getConfigDir().resolve("maliworld.json");
+        try (Writer w = Files.newBufferedWriter(cfgPath)) {
+            GSON.toJson(buildData(), w);
         } catch (IOException e) {
             MaliWorldMod.LOGGER.warn("[MaliWorld] Falha ao salvar config: {}", e.getMessage());
         }
     }
 
-    private static void applyFrom(MaliWorldConfig src) {
-        ENHANCED_TERRAIN    = src.ENHANCED_TERRAIN;
-        TERRAIN_OCTAVES     = src.TERRAIN_OCTAVES;
-        MOUNTAIN_SCALE      = src.MOUNTAIN_SCALE;
-        CONTINENT_SCALE     = src.CONTINENT_SCALE;
-        DOMAIN_WARP_STRENGTH= src.DOMAIN_WARP_STRENGTH;
-        RIVERS_ENABLED      = src.RIVERS_ENABLED;
-        LAKES_ENABLED       = src.LAKES_ENABLED;
-        WATERFALLS_ENABLED  = src.WATERFALLS_ENABLED;
-        PATHS_ENABLED       = src.PATHS_ENABLED;
-        CAVES_ENHANCED      = src.CAVES_ENHANCED;
-        REALISTIC_VILLAGES  = src.REALISTIC_VILLAGES;
-        RUINS_ENABLED       = src.RUINS_ENABLED;
-        FORTRESS_ENABLED    = src.FORTRESS_ENABLED;
-        TEMPLES_ENABLED     = src.TEMPLES_ENABLED;
-        UNDERGROUND_CITIES  = src.UNDERGROUND_CITIES;
-        GREEDY_MESHING      = src.GREEDY_MESHING;
-        ASYNC_LIGHTING      = src.ASYNC_LIGHTING;
-        ASYNC_PATHFINDING   = src.ASYNC_PATHFINDING;
-        MOB_TICK_THROTTLE   = src.MOB_TICK_THROTTLE;
-        MOB_NEAR_DISTANCE   = src.MOB_NEAR_DISTANCE;
-        MOB_FAR_DISTANCE    = src.MOB_FAR_DISTANCE;
-        ELYTRA_PREDICTOR    = src.ELYTRA_PREDICTOR;
-        LIMIT_EXPLOSIONS    = src.LIMIT_EXPLOSIONS;
-        ENTITY_CULL_MOB_DIST= src.ENTITY_CULL_MOB_DIST;
-        ENTITY_CULL_ITEM_DIST=src.ENTITY_CULL_ITEM_DIST;
+    private static ConfigData buildData() {
+        ConfigData d = new ConfigData();
+        d.enhancedTerrain    = ENHANCED_TERRAIN;
+        d.terrainOctaves     = TERRAIN_OCTAVES;
+        d.mountainScale      = MOUNTAIN_SCALE;
+        d.continentScale     = CONTINENT_SCALE;
+        d.riversEnabled      = RIVERS_ENABLED;
+        d.lakesEnabled       = LAKES_ENABLED;
+        d.waterfallsEnabled  = WATERFALLS_ENABLED;
+        d.pathsEnabled       = PATHS_ENABLED;
+        d.cavesEnhanced      = CAVES_ENHANCED;
+        d.realisticVillages  = REALISTIC_VILLAGES;
+        d.ruinsEnabled       = RUINS_ENABLED;
+        d.fortressEnabled    = FORTRESS_ENABLED;
+        d.templesEnabled     = TEMPLES_ENABLED;
+        d.undergroundCities  = UNDERGROUND_CITIES;
+        d.greedyMeshing      = GREEDY_MESHING;
+        d.asyncLighting      = ASYNC_LIGHTING;
+        d.asyncPathfinding   = ASYNC_PATHFINDING;
+        d.mobTickThrottle    = MOB_TICK_THROTTLE;
+        d.mobNearDistance    = MOB_NEAR_DISTANCE;
+        d.mobFarDistance     = MOB_FAR_DISTANCE;
+        d.elytraPredictor    = ELYTRA_PREDICTOR;
+        d.limitExplosions    = LIMIT_EXPLOSIONS;
+        d.explosionMaxRays   = EXPLOSION_MAX_RAYS;
+        return d;
+    }
+
+    private static void applyData(ConfigData d) {
+        ENHANCED_TERRAIN    = d.enhancedTerrain;
+        TERRAIN_OCTAVES     = d.terrainOctaves;
+        MOUNTAIN_SCALE      = d.mountainScale;
+        CONTINENT_SCALE     = d.continentScale;
+        RIVERS_ENABLED      = d.riversEnabled;
+        LAKES_ENABLED       = d.lakesEnabled;
+        WATERFALLS_ENABLED  = d.waterfallsEnabled;
+        PATHS_ENABLED       = d.pathsEnabled;
+        CAVES_ENHANCED      = d.cavesEnhanced;
+        REALISTIC_VILLAGES  = d.realisticVillages;
+        RUINS_ENABLED       = d.ruinsEnabled;
+        FORTRESS_ENABLED    = d.fortressEnabled;
+        TEMPLES_ENABLED     = d.templesEnabled;
+        UNDERGROUND_CITIES  = d.undergroundCities;
+        GREEDY_MESHING      = d.greedyMeshing;
+        ASYNC_LIGHTING      = d.asyncLighting;
+        ASYNC_PATHFINDING   = d.asyncPathfinding;
+        MOB_TICK_THROTTLE   = d.mobTickThrottle;
+        MOB_NEAR_DISTANCE   = d.mobNearDistance;
+        MOB_FAR_DISTANCE    = d.mobFarDistance;
+        ELYTRA_PREDICTOR    = d.elytraPredictor;
+        LIMIT_EXPLOSIONS    = d.limitExplosions;
+        EXPLOSION_MAX_RAYS  = d.explosionMaxRays;
+    }
+
+    private static class ConfigData {
+        boolean enhancedTerrain    = true;
+        int     terrainOctaves     = 6;
+        float   mountainScale      = 1.5f;
+        float   continentScale     = 1.0f;
+        boolean riversEnabled      = true;
+        boolean lakesEnabled       = true;
+        boolean waterfallsEnabled  = true;
+        boolean pathsEnabled       = true;
+        boolean cavesEnhanced      = true;
+        boolean realisticVillages  = true;
+        boolean ruinsEnabled       = true;
+        boolean fortressEnabled    = true;
+        boolean templesEnabled     = true;
+        boolean undergroundCities  = false;
+        boolean greedyMeshing      = true;
+        boolean asyncLighting      = true;
+        boolean asyncPathfinding   = true;
+        boolean mobTickThrottle    = true;
+        int     mobNearDistance    = 32;
+        int     mobFarDistance     = 64;
+        boolean elytraPredictor    = true;
+        boolean limitExplosions    = true;
+        int     explosionMaxRays   = 256;
     }
 }

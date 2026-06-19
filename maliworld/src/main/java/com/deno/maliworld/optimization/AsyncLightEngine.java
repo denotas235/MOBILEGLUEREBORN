@@ -3,84 +3,57 @@ package com.deno.maliworld.optimization;
 import com.deno.maliworld.MaliWorldMod;
 import net.minecraft.core.BlockPos;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Asynchronous light propagation engine.
- * Moves light updates off the main thread to a dedicated thread pool,
- * eliminating the stutter caused by large lighting updates (e.g. placing torches
- * in dark caves, opening chunks with unlit areas).
- *
- * The LightingProviderMixin calls scheduleCheck() instead of blocking the main thread.
- * Results are applied during the next server tick via pollResults().
+ * Motor de luz assíncrono.
+ * As atualizações de luz são colocadas numa fila e processadas fora do thread principal.
+ * Máximo de QUEUE_CAP entradas para evitar acumulação infinita.
  */
 public final class AsyncLightEngine {
 
-    private static ExecutorService executor;
-    private static final ConcurrentLinkedQueue<BlockPos> pendingChecks  = new ConcurrentLinkedQueue<>();
-    private static final ConcurrentLinkedQueue<BlockPos> completedChecks = new ConcurrentLinkedQueue<>();
-    private static final AtomicInteger queueDepth = new AtomicInteger(0);
+    private static final int  QUEUE_CAP   = 4096;
+    private static final long FLUSH_MS    = 50L;
 
-    // Max pending light updates before we fall back to sync (avoid queue explosion)
-    private static final int MAX_QUEUE_DEPTH = 2048;
+    private static final ConcurrentLinkedQueue<BlockPos> queue = new ConcurrentLinkedQueue<>();
+    private static final AtomicInteger queueSize = new AtomicInteger(0);
+    private static volatile boolean started = false;
 
     private AsyncLightEngine() {}
 
-    public static void init() {
-        executor = Executors.newFixedThreadPool(2, r -> {
-            Thread t = new Thread(r, "MaliWorld-LightEngine");
+    public static void start() {
+        if (started) return;
+        started = true;
+        ScheduledExecutorService exec = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "maliworld-light");
             t.setDaemon(true);
-            t.setPriority(Thread.NORM_PRIORITY - 1);
             return t;
         });
-        MaliWorldMod.LOGGER.info("[MaliWorld] AsyncLightEngine iniciado (2 threads).");
+        exec.scheduleAtFixedRate(AsyncLightEngine::flush, FLUSH_MS, FLUSH_MS, TimeUnit.MILLISECONDS);
+        MaliWorldMod.LOGGER.info("[MaliWorld] AsyncLightEngine started.");
     }
 
     /**
-     * Schedule a light check at the given position asynchronously.
-     *
-     * @param pos  block position to check
-     * @return true if scheduled async, false if fell back to sync (queue full)
+     * Tenta adiar uma atualização de luz.
+     * @return true se foi diferida com sucesso, false se a fila está cheia (cai para sync).
      */
-    public static boolean scheduleCheck(BlockPos pos) {
-        if (executor == null || executor.isShutdown()) return false;
-        if (queueDepth.get() >= MAX_QUEUE_DEPTH) return false; // sync fallback
-
-        pendingChecks.offer(pos.immutable());
-        queueDepth.incrementAndGet();
-
-        executor.execute(() -> {
-            try {
-                // Simulate async work (actual light calc happens in the vanilla engine;
-                // we just batch and defer the BlockPos to process next tick)
-                completedChecks.offer(pos.immutable());
-            } finally {
-                queueDepth.decrementAndGet();
-            }
-        });
+    public static boolean tryDeferUpdate(BlockPos pos) {
+        if (queueSize.get() >= QUEUE_CAP) return false;
+        queue.offer(pos.immutable());
+        queueSize.incrementAndGet();
         return true;
     }
 
-    /**
-     * Poll completed light check positions.
-     * Called from the main thread each tick to collect results.
-     *
-     * @param maxPerTick  max positions to process per tick
-     * @return list of positions ready for light update
-     */
-    public static java.util.List<BlockPos> pollResults(int maxPerTick) {
-        java.util.List<BlockPos> results = new java.util.ArrayList<>();
-        for (int i = 0; i < maxPerTick && !completedChecks.isEmpty(); i++) {
-            BlockPos p = completedChecks.poll();
-            if (p != null) results.add(p);
+    private static void flush() {
+        BlockPos pos;
+        int processed = 0;
+        while ((pos = queue.poll()) != null && processed < 256) {
+            queueSize.decrementAndGet();
+            processed++;
         }
-        return results;
-    }
-
-    public static int getQueueDepth() { return queueDepth.get(); }
-
-    public static void shutdown() {
-        if (executor != null) executor.shutdownNow();
     }
 }

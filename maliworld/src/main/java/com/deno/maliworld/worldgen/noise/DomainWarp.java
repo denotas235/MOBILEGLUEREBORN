@@ -1,62 +1,24 @@
 package com.deno.maliworld.worldgen.noise;
 
 /**
- * Domain Warping - Inigo Quilez technique.
- * Distorts input coordinates before sampling noise, creating
- * organic, non-repetitive terrain that looks geologically real.
+ * Domain Warping — distorce as coordenadas de entrada do noise antes de samplear.
+ * Técnica de Inigo Quilez. Elimina repetição e cria formas únicas de terreno.
  */
 public final class DomainWarp {
 
-    private final double frequency;
-    private final double strength;
+    private final FractalNoise noiseX;
+    private final FractalNoise noiseZ;
+    private final float strength;
 
-    /**
-     * @param frequency  how large the warp patterns are (smaller = larger warps)
-     * @param strength   how far coordinates are displaced (in world units)
-     */
-    public DomainWarp(double frequency, double strength) {
-        this.frequency = frequency;
-        this.strength  = strength;
+    public DomainWarp(long seed, float strength) {
+        this.noiseX   = new FractalNoise(4, 0.5f, 2.0f, seed ^ 0x1234567L);
+        this.noiseZ   = new FractalNoise(4, 0.5f, 2.0f, seed ^ 0x89ABCDEFL);
+        this.strength = strength;
     }
 
-    /**
-     * Warp the input coordinates and return the displacement.
-     * Use warpedX/warpedZ as inputs to subsequent noise calls.
-     *
-     * Standard Quilez formula:
-     *   q = fbm(pos)
-     *   r = fbm(pos + q)
-     *   result = fbm(pos + r)
-     */
-    public double[] warp(double x, double z) {
-        // First level warp displacement
-        double qx = SimplexNoise.noise(x * frequency,           z * frequency + 0.0);
-        double qz = SimplexNoise.noise(x * frequency + 5.2,     z * frequency + 1.3);
-
-        // Second level warp (more complex distortion)
-        double rx = SimplexNoise.noise((x + strength*qx) * frequency + 1.7,
-                                       (z + strength*qz) * frequency + 9.2);
-        double rz = SimplexNoise.noise((x + strength*qx) * frequency + 8.3,
-                                       (z + strength*qz) * frequency + 2.8);
-
-        // Return warped coordinates
-        return new double[]{x + strength*rx, z + strength*rz};
-    }
-
-    /**
-     * Single-level warp (faster, good for ocean/continent masks).
-     */
-    public double[] warpLight(double x, double z) {
-        double qx = SimplexNoise.noise(x * frequency,       z * frequency);
-        double qz = SimplexNoise.noise(x * frequency + 3.7, z * frequency + 7.1);
-        return new double[]{x + (strength*0.4)*qx, z + (strength*0.4)*qz};
-    }
-
-    /**
-     * Sample a FractalNoise at warped coordinates.
-     */
-    public double warpedSample(FractalNoise noise, double x, double z) {
-        double[] w = warp(x, z);
-        return noise.sample(w[0], w[1]);
+    public float[] warp(float x, float z) {
+        float wx = x + strength * noiseX.sample(x, z);
+        float wz = z + strength * noiseZ.sample(x + 5.2f, z + 1.3f);
+        return new float[]{wx, wz};
     }
 }
