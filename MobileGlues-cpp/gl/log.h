@@ -136,6 +136,13 @@ void log_unique_function(const char* func_name);
         printf("\n");                                                                                                  \
         write_log(__VA_ARGS__);                                                                                        \
     }
+#define LOG_E_FORCE(...)                                                                                               \
+    {                                                                                                                  \
+        __android_log_print(ANDROID_LOG_ERROR, RENDERERNAME, __VA_ARGS__);                                             \
+        printf(__VA_ARGS__);                                                                                           \
+        printf("\n");                                                                                                  \
+        write_log(__VA_ARGS__);                                                                                        \
+    }
 
 #define MOBILEGLUES_LOG_H
 
