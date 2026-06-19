@@ -7,8 +7,6 @@
 
 #include <cctype>
 #include "shader.h"
-#include "shader_sanitizer.h"
-#include "shader_patcher.h"
 
 #include <GL/gl.h>
 #include "log.h"
@@ -18,16 +16,8 @@
 #include "glsl/glsl_for_es.h"
 #include "../config/settings.h"
 #include "FSR1/FSR1.h"
-#include "phase2_lighting.h"
-#include "mali_sorter.h"
 
 #define DEBUG 0
-
-#include <unordered_map>
-extern std::unordered_map<GLuint, std::string> g_shader_sources;
-
-// Armazena o shader ORIGINAL (antes de qualquer sanitizacao) para fallback
-static std::unordered_map<GLuint, std::string> g_original_shader_sources;
 
 struct shader_t shaderInfo;
 
@@ -61,27 +51,6 @@ bool check_if_sampler_buffer_used(std::string str) {
     return str.find("samplerBuffer") != std::string::npos;
 }
 
-// --- Funcao auxiliar: tenta compilar shader e retorna sucesso/falha ---
-static bool try_compile_shader(GLuint shader, const char* source) {
-    GLint compileStatus = GL_FALSE;
-    GLES.glShaderSource(shader, 1, &source, nullptr);
-    GLES.glCompileShader(shader);
-    GLES.glGetShaderiv(shader, GL_COMPILE_STATUS, &compileStatus);
-    return (compileStatus == GL_TRUE);
-}
-
-// --- Funcao auxiliar: obter log de erro do shader ---
-static std::string get_shader_error_log(GLuint shader) {
-    GLint logSize = 0;
-    GLES.glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logSize);
-    if (logSize > 0) {
-        std::string log(logSize, '\0');
-        GLES.glGetShaderInfoLog(shader, logSize, nullptr, &log[0]);
-        return log;
-    }
-    return "(sem log)";
-}
-
 void glShaderSource(GLuint shader, GLsizei count, const GLchar* const* string, const GLint* length) {
     LOG()
     shaderInfo.id = 0;
@@ -105,117 +74,32 @@ void glShaderSource(GLuint shader, GLsizei count, const GLchar* const* string, c
         }
     }
 
-    // Guardar shader ORIGINAL para fallback (antes de qualquer modificacao)
-    g_original_shader_sources[shader] = glsl_src;
+    bool is_sampler_buffer_emulated = hardware->emulate_texture_buffer && check_if_sampler_buffer_used(glsl_src);
 
-    // --- Fase 1: Sanitizador GLES 3.0 (deve ser ABSOLUTAMENTE o primeiro passo) ---
-    // Garante que #version 300 es eh o primeiro byte, remove extensoes ASTC
-    // problematicas e injeta precisao. Sem isto, o driver Mali rejeita o shader
-    // com erro 0:1 / 0:2 antes de qualquer outra transformacao poder correr.
-    std::string sanitized_src = sanitizeForMaliGLES(glsl_src);
-
-    // --- Fase 1b: Aplicar patch adicional no shader (apos sanitizacao) ---
-    GLint shaderType;
-    GLES.glGetShaderiv(shader, GL_SHADER_TYPE, &shaderType);
-    std::string patched_src = patch_shader_source(sanitized_src.c_str(), shaderType);
-    // ----------------------------------------------------------------------
-
-    bool is_sampler_buffer_emulated = hardware->emulate_texture_buffer && check_if_sampler_buffer_used(patched_src);
-
-    if (is_direct_shader(patched_src.c_str())) {
+    if (is_direct_shader(glsl_src.c_str())) {
         LOG_D("[INFO] [Shader] Direct shader source: ")
-        LOG_D("%s", patched_src.c_str())
-        essl_src = patched_src;
+        LOG_D("%s", glsl_src.c_str())
+        essl_src = glsl_src;
     } else {
-        int glsl_version = getGLSLVersion(patched_src.c_str());
+        int glsl_version = getGLSLVersion(glsl_src.c_str());
         LOG_D("[INFO] [Shader] Shader source: ")
-        LOG_D("%s", patched_src.c_str())
+        LOG_D("%s", glsl_src.c_str())
+        GLint shaderType;
+        GLES.glGetShaderiv(shader, GL_SHADER_TYPE, &shaderType);
         int return_code = 0;
-        essl_src = GLSLtoGLSLES(patched_src.c_str(), shaderType, hardware->es_version, glsl_version, return_code);
+        essl_src = GLSLtoGLSLES(glsl_src.c_str(), shaderType, hardware->es_version, glsl_version, return_code);
         if (return_code == 1) { // atomicCounterEmulated
             shader_map_is_atomic_counter_emulated[shader] = true;
             LOG_D("[INFO] [Shader] Atomic counter emulated in shader %d", shader)
         }
 
         if (essl_src.empty()) {
-            // FALLBACK: Se a conversao falhar, tentar usar o shader sanitizado diretamente
-            LOG_W("[WARN] [Shader] GLSLtoGLSLES falhou para shader %d, tentando shader sanitizado diretamente", shader)
-            essl_src = sanitized_src;
+            LOG_E("Failed to convert shader %d.", shader)
+            return;
         }
         LOG_D("\n[INFO] [Shader] Converted Shader source: \n%s", essl_src.c_str())
     }
     if (!essl_src.empty()) {
-        GLint shaderType = 0;
-        GLES.glGetShaderiv(shader, GL_SHADER_TYPE, &shaderType);
-        bool is_fragment = (shaderType == GL_FRAGMENT_SHADER);
-
-        // Injeta otimizacoes da Fase 2 (PLS e Framebuffer Fetch)
-        essl_src = phase2_inject_pls(essl_src, is_fragment);
-        if (is_fragment) {
-            essl_src = phase2_inject_fbfetch(essl_src);
-        }
-        
-        // Injeta otimizacao da Fase 4 (AtmosV-Alpha Fog)
-        essl_src = mali_sorter_inject_fog(essl_src, is_fragment);
-
-        // --- Lexical Shader Transpiler (Fase 5 - Engine Fix) ---
-        if (is_fragment) {
-            // Sempre injeta bloco completo de precisoes logo apos o #version
-            // O GLSL 3.30+ do Minecraft nao declara precisoes, obrigatorio no ESSL 3.0
-            static const std::string precision_block =
-                "precision highp float;\n"
-                "precision highp int;\n"
-                "precision mediump sampler2D;\n"
-                "precision mediump sampler3D;\n"
-                "precision mediump samplerCube;\n"
-                "precision mediump sampler2DShadow;\n"
-                "precision mediump sampler2DArray;\n";
-
-            size_t ver_pos = essl_src.find("#version");
-            size_t inject_pos = std::string::npos;
-            if (ver_pos != std::string::npos) {
-                inject_pos = essl_src.find('\n', ver_pos);
-                if (inject_pos != std::string::npos) inject_pos += 1;
-            }
-
-            // Remove precisoes duplicadas antigas se existirem antes de reinjetar
-            size_t old_prec = essl_src.find("precision mediump float;");
-            if (old_prec != std::string::npos) {
-                size_t old_end = essl_src.find('\n', old_prec);
-                if (old_end != std::string::npos) essl_src.erase(old_prec, old_end - old_prec + 1);
-                // Recalcula inject_pos apos remocao
-                ver_pos = essl_src.find("#version");
-                inject_pos = std::string::npos;
-                if (ver_pos != std::string::npos) {
-                    inject_pos = essl_src.find('\n', ver_pos);
-                    if (inject_pos != std::string::npos) inject_pos += 1;
-                }
-            }
-
-            if (inject_pos != std::string::npos) {
-                essl_src.insert(inject_pos, precision_block);
-            } else {
-                essl_src = precision_block + essl_src;
-            }
-
-            // Substitui gl_FragColor obsoleto (banido no ESSL 3.0)
-            if (essl_src.find("gl_FragColor") != std::string::npos) {
-                static const std::string frag_out_decl =
-                    "layout(location = 0) out vec4 _mg_FragColor;\n"
-                    "#define gl_FragColor _mg_FragColor\n";
-                ver_pos = essl_src.find("#version");
-                if (ver_pos != std::string::npos) {
-                    size_t end_line = essl_src.find('\n', ver_pos);
-                    if (end_line != std::string::npos) essl_src.insert(end_line + 1, frag_out_decl);
-                } else {
-                    essl_src = frag_out_decl + essl_src;
-                }
-            }
-        }
-
-        // Armazena a fonte do shader para a Fase 3 (Shader Binary Cache)
-        g_shader_sources[shader] = essl_src;
-
         shaderInfo.id = shader;
         shaderInfo.converted = essl_src;
         const char* s[] = {essl_src.c_str()};
@@ -230,37 +114,12 @@ void glShaderSource(GLuint shader, GLsizei count, const GLchar* const* string, c
 void glGetShaderiv(GLuint shader, GLenum pname, GLint* params) {
     LOG()
     GLES.glGetShaderiv(shader, pname, params);
-    
-    // FALLBACK: Se a compilacao falhou, tentar usar shader original
-    if (pname == GL_COMPILE_STATUS && !*params) {
-        GLchar infoLog[1024];
-        GLES.glGetShaderInfoLog(shader, sizeof(infoLog), nullptr, infoLog);
-        LOG_W_FORCE("[MobileGlues] Shader %d compilation FAILED: %s", shader, infoLog)
-        
-        // Verificar se temos o shader original guardado
-        auto it = g_original_shader_sources.find(shader);
-        if (it != g_original_shader_sources.end()) {
-            LOG_W_FORCE("[MobileGlues] Tentando FALLBACK para shader original (sem sanitizacao)...")
-            
-            // Tentar compilar o shader ORIGINAL (sem sanitizacao)
-            const char* original_src = it->second.c_str();
-            if (try_compile_shader(shader, original_src)) {
-                LOG_W_FORCE("[MobileGlues] FALLBACK bem-sucedido! Shader original compilou.")
-                GLES.glGetShaderiv(shader, GL_COMPILE_STATUS, params);
-                g_shader_sources[shader] = it->second;  // Atualizar fonte guardada
-                CHECK_GL_ERROR
-                return;
-            } else {
-                std::string fallback_log = get_shader_error_log(shader);
-                LOG_E_FORCE("[MobileGlues] FALLBACK tambem falhou: %s", fallback_log.c_str())
-            }
-        }
-        
-        // Ultimo recurso: ignorar erro (modo cheat) se configurado
-        if (global_settings.ignore_error >= IgnoreErrorLevel::Partial) {
-            LOG_W_FORCE("[MobileGlues] Ignorando erro de compilacao (modo cheat) - shader pode renderizar incorretamente!")
-            *params = GL_TRUE;
-        }
+    if (global_settings.ignore_error >= IgnoreErrorLevel::Partial && pname == GL_COMPILE_STATUS && !*params) {
+        GLchar infoLog[512];
+        GLES.glGetShaderInfoLog(shader, 512, nullptr, infoLog);
+        LOG_W_FORCE("Shader %d compilation failed: \n%s", shader, infoLog)
+        LOG_W_FORCE("Now try to cheat.")
+        *params = GL_TRUE;
     }
     CHECK_GL_ERROR
 }
@@ -276,31 +135,4 @@ GLuint glCreateShader(GLenum shaderType) {
     if (shader != 0 && hardware->emulate_texture_buffer) shader_map_is_sampler_buffer_emulated[shader] = false;
     CHECK_GL_ERROR
     return shader;
-}
-
-void glDeleteShader(GLuint shader) {
-    LOG()
-    LOG_D("glDeleteShader(%d)", shader)
-    g_shader_sources.erase(shader);
-    g_original_shader_sources.erase(shader);
-    GLES.glDeleteShader(shader);
-    CHECK_GL_ERROR
-}
-
-void glMaxShaderCompilerThreadsKHR(GLuint count) {
-    LOG()
-    LOG_D("glMaxShaderCompilerThreadsKHR(%u)", count)
-    if (GLES.glMaxShaderCompilerThreadsKHR) {
-        GLES.glMaxShaderCompilerThreadsKHR(count);
-    } else {
-        LOG_W("Driver does not support glMaxShaderCompilerThreadsKHR. Ignoring call.")
-    }
-}
-
-void glMaxShaderCompilerThreadsARB(GLuint count) {
-    LOG()
-    LOG_D("glMaxShaderCompilerThreadsARB(%u)", count)
-    if (GLES.glMaxShaderCompilerThreadsKHR) {
-        GLES.glMaxShaderCompilerThreadsKHR(count);
-    }
 }
