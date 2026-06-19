@@ -16,16 +16,15 @@ repositories {
 }
 
 dependencies {
-    // Minecraft 1.21.11 com Mojang Official Mappings
-    // Nota: 1.21.11 é a última versão com suporte Yarn/Intermediary — daí Mojang Mappings
-    minecraft("com.mojang:minecraft:1.21.11")
+    // Minecraft 1.21 com Mojang Official Mappings
+    minecraft("com.mojang:minecraft:1.21")
     mappings(loom.officialMojangMappings())
 
     // Fabric Loader 0.16.9+
     modImplementation("net.fabricmc:fabric-loader:0.16.9")
 
-    // Fabric API para 1.21.11 (última versão estável)
-    modImplementation("net.fabricmc.fabric-api:fabric-api:0.141.4+1.21.11")
+    // Fabric API para 1.21
+    modImplementation("net.fabricmc.fabric-api:fabric-api:0.102.0+1.21")
 }
 
 tasks.processResources {
