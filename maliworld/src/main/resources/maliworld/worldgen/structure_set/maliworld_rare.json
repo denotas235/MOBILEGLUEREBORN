@@ -1,0 +1,17 @@
+{
+  "structures": [
+    { "structure": "maliworld:mountain_fortress",     "weight": 3 },
+    { "structure": "maliworld:ancient_temple_jungle", "weight": 2 },
+    { "structure": "maliworld:ancient_temple_desert", "weight": 2 },
+    { "structure": "maliworld:overworld_castle",      "weight": 1 },
+    { "structure": "maliworld:villager_fortress",     "weight": 2 },
+    { "structure": "maliworld:pyramide_of_anubis",    "weight": 1 },
+    { "structure": "maliworld:sunken_city",           "weight": 1 }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 80,
+    "separation": 20,
+    "salt": 10387399
+  }
+}

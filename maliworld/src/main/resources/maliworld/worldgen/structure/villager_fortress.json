@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:jigsaw",
+  "biomes": [
+    "minecraft:plains",
+    "minecraft:sunflower_plains",
+    "minecraft:forest",
+    "minecraft:flower_forest",
+    "minecraft:birch_forest"
+  ],
+  "spawn_overrides": {
+    "monster": {
+      "bounding_box": "full",
+      "spawns": [
+        { "type": "minecraft:pillager", "weight": 2, "minCount": 1, "maxCount": 3 }
+      ]
+    }
+  },
+  "step": "surface_structures",
+  "terrain_adaptation": "beard_box",
+  "start_pool": "maliworld:overworld/villager_fortress",
+  "size": 2,
+  "start_height": { "absolute": 0 },
+  "project_start_to_heightmap": "WORLD_SURFACE_WG",
+  "max_distance_from_center": 64,
+  "use_expansion_hack": false
+}

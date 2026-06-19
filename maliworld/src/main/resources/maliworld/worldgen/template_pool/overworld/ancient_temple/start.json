@@ -1,0 +1,15 @@
+{
+  "name": "maliworld:overworld/ancient_temple",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "maliworld:overworld/rare/elven_tree",
+        "projection": "rigid",
+        "processors": "minecraft:empty"
+      }
+    }
+  ]
+}

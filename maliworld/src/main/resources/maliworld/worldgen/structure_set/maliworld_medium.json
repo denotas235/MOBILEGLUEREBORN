@@ -1,0 +1,15 @@
+{
+  "structures": [
+    { "structure": "maliworld:natural_ruins",   "weight": 5 },
+    { "structure": "maliworld:explorer_cabin",  "weight": 4 },
+    { "structure": "maliworld:abandoned_farm",  "weight": 4 },
+    { "structure": "maliworld:enchanter_tower", "weight": 2 },
+    { "structure": "maliworld:wilderness_church","weight": 2 }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 24,
+    "separation": 6,
+    "salt": 10387500
+  }
+}
