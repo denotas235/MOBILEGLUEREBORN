@@ -9,10 +9,14 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+/**
+ * Throttle de tick de mobs distantes para reduzir carga do servidor.
+ * require=0: fallback gracioso se a assinatura do Mob.tick() mudar.
+ */
 @Mixin(Mob.class)
 public abstract class MobEntityMixin {
 
-    @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "tick", at = @At("HEAD"), cancellable = true, require = 0)
     private void onTick(CallbackInfo ci) {
         if (!MaliWorldConfig.MOB_TICK_THROTTLE) return;
 
