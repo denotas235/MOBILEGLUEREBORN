@@ -8,11 +8,8 @@ import net.minecraft.world.level.ChunkPos;
 
 /**
  * Pré-carrega chunks na trajetória da elytra.
- * Calcula posição estimada em 3s com base em velocidade + direção atuais.
- *
  * MC 1.21.11: addRegionTicket foi removido.
- * Usa addTicketWithRadius(TicketType, ChunkPos, int) que carrega todos os
- * chunks num raio automaticamente.
+ * Usa addTicketWithRadius(TicketType, ChunkPos, int).
  */
 public final class ElytraPredictor {
 

@@ -11,7 +11,6 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
  * MC 1.21.11: Explosion é um record imutável — o campo radius não pode ser
  * modificado via @Shadow. Interceptamos o argumento float radius
  * no método Level.explode() de 9 argumentos antes que o record seja criado.
- *
  * require=0: fallback gracioso se a assinatura mudar.
  */
 @Mixin(Level.class)

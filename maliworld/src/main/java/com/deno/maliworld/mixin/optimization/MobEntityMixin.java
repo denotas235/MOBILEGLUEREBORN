@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Throttle de tick de mobs distantes para reduzir carga do servidor.
+ * Throttle de tick de mobs distantes.
  * require=0: fallback gracioso se a assinatura do Mob.tick() mudar.
  */
 @Mixin(Mob.class)
