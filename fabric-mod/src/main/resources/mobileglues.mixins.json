@@ -4,9 +4,11 @@
   "package": "com.nexus.mixins",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "MaliShaderSanitizerMixin"
+    "MaliShaderSanitizerMixin",
+    "AstcTextureMixin",
+    "SectionCompilerMixin"
   ],
   "injectors": {
-    "defaultRequire": 1
+    "defaultRequire": 0
   }
 }
