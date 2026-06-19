@@ -6,7 +6,8 @@
   "client": [
     "MaliShaderSanitizerMixin",
     "AstcTextureMixin",
-    "SectionCompilerMixin"
+    "SectionCompilerMixin",
+    "GameRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 0
