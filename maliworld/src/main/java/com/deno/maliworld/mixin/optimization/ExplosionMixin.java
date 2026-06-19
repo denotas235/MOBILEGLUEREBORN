@@ -8,9 +8,8 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 /**
  * Limita o raio de explosão a máximo 6 blocos.
- * MC 1.21.11: Explosion é um record (imutável) — o campo radius não pode ser
- * modificado via @Shadow. Em vez disso, interceptamos o argumento float radius
- * no método Level.explode(...) antes de criar o record Explosion.
+ * MC 1.21.11: Explosion é um record imutável. Interceptamos o argumento float radius
+ * no método Level.explode() de 9 argumentos antes que o record seja criado.
  *
  * require=0: fallback gracioso se a assinatura mudar.
  */
@@ -19,11 +18,7 @@ public abstract class ExplosionMixin {
 
     @ModifyArg(
         method = "explode(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/damagesource/DamageSource;Lnet/minecraft/world/level/ExplosionDamageCalculator;DDDFZLnet/minecraft/world/level/Level$ExplosionInteraction;)V",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/world/level/Level;explode(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/damagesource/DamageSource;Lnet/minecraft/world/level/ExplosionDamageCalculator;DDDFZLnet/minecraft/world/level/Level$ExplosionInteraction;Lnet/minecraft/core/particles/ParticleOptions;Lnet/minecraft/core/particles/ParticleOptions;Lnet/minecraft/util/random/WeightedList;Lnet/minecraft/core/Holder;)V",
-            remap = true
-        ),
+        at = @At("HEAD"),
         index = 6,
         require = 0
     )
