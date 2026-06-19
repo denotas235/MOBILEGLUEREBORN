@@ -7,14 +7,8 @@ import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Throttle de tick de mobs por distância ao jogador mais próximo.
- * < 32 blocos → tick normal
- * 32-64 blocos → tick a cada 2
- * > 64 blocos  → tick a cada 4
- */
 @Mixin(Mob.class)
 public abstract class MobEntityMixin {
 
