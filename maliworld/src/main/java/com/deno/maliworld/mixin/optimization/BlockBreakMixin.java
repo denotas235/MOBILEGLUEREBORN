@@ -1,27 +1,29 @@
 package com.deno.maliworld.mixin.optimization;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayerGameMode;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * Distributes chunk mesh rebuilds after block breaks.
- * Limits to maximum 2 rebuild submissions per tick to avoid
- * frame spikes when breaking blocks in dense terrain.
+ * Limits rebuild submissions per tick to prevent frame spikes.
  *
- * Target: ServerPlayerGameMode.destroyBlock()
+ * Uses @Shadow to access the protected level field (Mojang 1.21.11 mappings).
  * require=0: safe fallback.
  */
 @Mixin(value = ServerPlayerGameMode.class, remap = true)
 public abstract class BlockBreakMixin {
 
-    // Track rebuild submissions this tick
-    private static long maliworld$lastTick = -1L;
-    private static int  maliworld$rebuildsThisTick = 0;
-    private static final int MAX_REBUILDS_PER_TICK = 2;
+    @Shadow protected ServerLevel level;
+
+    private static long  maliworld$lastTick        = -1L;
+    private static int   maliworld$rebuildsThisTick = 0;
+    private static final int MAX_REBUILDS_PER_TICK  = 2;
 
     @Inject(
         method = "destroyBlock",
@@ -29,14 +31,14 @@ public abstract class BlockBreakMixin {
         require = 0
     )
     private void maliworld$onDestroyBlock(BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
-        ServerPlayerGameMode self = (ServerPlayerGameMode)(Object)this;
-        long currentTick = self.level.getGameTime();
+        if (level == null) return;
+        long currentTick = level.getGameTime();
 
         if (currentTick != maliworld$lastTick) {
-            maliworld$lastTick = currentTick;
+            maliworld$lastTick        = currentTick;
             maliworld$rebuildsThisTick = 0;
         }
         maliworld$rebuildsThisTick++;
-        // If over limit, note it (actual rebuild throttling is render-side via ChunkBuilderMixin)
+        // Throttling signal: render-side ChunkBuilderMixin can read this counter
     }
 }
