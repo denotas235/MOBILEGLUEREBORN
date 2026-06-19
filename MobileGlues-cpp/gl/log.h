@@ -44,106 +44,57 @@ int __android_log_print(int prio, const char* tag, const char* fmt, ...);
 #endif
 
 #if GLOBAL_DEBUG_FORCE_OFF
-#define LOG()                                                                                                          \
-    {}
-#define LOG_D(...)                                                                                                     \
-    {}
-#define LOG_D_N(...)                                                                                                   \
-    {}
-#define LOG_W(...)                                                                                                     \
-    {}
-#define LOG_E(...)                                                                                                     \
-    {}
-#define LOG_F(...)                                                                                                     \
-    {}
+#define LOG()                                                                                                              {}
+#define LOG_D(...)                                                                                                         {}
+#define LOG_D_N(...)                                                                                                       {}
+#define LOG_W(...)                                                                                                         {}
+#define LOG_E(...)                                                                                                         {}
+#define LOG_F(...)                                                                                                         {}
 #else
 #if PROFILING
-#define LOG()                                                                                                          \
-    perfetto::StaticString _FUNC_NAME_ = __func__;                                                                     \
-    TRACE_EVENT("glcalls", _FUNC_NAME_);
+#define LOG()                                                                                                              perfetto::StaticString _FUNC_NAME_ = __func__;                                                                         TRACE_EVENT("glcalls", _FUNC_NAME_);
 #elif LOG_CALLED_FUNCS
-#define LOG()                                                                                                          \
-    if (DEBUG || GLOBAL_DEBUG) {                                                                                       \
-        __android_log_print(ANDROID_LOG_DEBUG, RENDERERNAME, "Use function: %s", __FUNCTION__);                        \
-        printf("Use function: %s\n", __FUNCTION__);                                                                    \
-        write_log("Use function: %s\n", __FUNCTION__);                                                                 \
-    }                                                                                                                  \
-    log_unique_function(__FUNCTION__);
+#define LOG()                                                                                                              if (DEBUG || GLOBAL_DEBUG) {                                                                                               __android_log_print(ANDROID_LOG_DEBUG, RENDERERNAME, "Use function: %s", __FUNCTION__);                                printf("Use function: %s
+", __FUNCTION__);                                                                            write_log("Use function: %s
+", __FUNCTION__);                                                                     }                                                                                                                      log_unique_function(__FUNCTION__);
 void log_unique_function(const char* func_name);
 #else
-#define LOG()                                                                                                          \
-    if (DEBUG || GLOBAL_DEBUG) {                                                                                       \
-        __android_log_print(ANDROID_LOG_DEBUG, RENDERERNAME, "\nUse function: %s", __FUNCTION__);                      \
-        printf("\nUse function: %s\n", __FUNCTION__);                                                                  \
-        write_log("\nUse function: %s\n", __FUNCTION__);                                                               \
-    }
+#define LOG()                                                                                                              if (DEBUG || GLOBAL_DEBUG) {                                                                                               __android_log_print(ANDROID_LOG_DEBUG, RENDERERNAME, "
+Use function: %s", __FUNCTION__);                              printf("
+Use function: %s
+", __FUNCTION__);                                                                          write_log("
+Use function: %s
+", __FUNCTION__);                                                                   }
 #endif
 
-#define LOG_D(...)                                                                                                     \
-    if (DEBUG || GLOBAL_DEBUG) {                                                                                       \
-        __android_log_print(ANDROID_LOG_DEBUG, RENDERERNAME, __VA_ARGS__);                                             \
-        printf(__VA_ARGS__);                                                                                           \
-        printf("\n");                                                                                                  \
-        write_log(__VA_ARGS__);                                                                                        \
-    }
-#define LOG_D_N(...)                                                                                                   \
-    if (DEBUG || GLOBAL_DEBUG) {                                                                                       \
-        __android_log_print(ANDROID_LOG_DEBUG, RENDERERNAME, __VA_ARGS__);                                             \
-        printf(__VA_ARGS__);                                                                                           \
-        write_log_n(__VA_ARGS__);                                                                                      \
-    }
-#define LOG_W(...)                                                                                                     \
-    if (DEBUG || GLOBAL_DEBUG) {                                                                                       \
-        __android_log_print(ANDROID_LOG_WARN, RENDERERNAME, __VA_ARGS__);                                              \
-        printf(__VA_ARGS__);                                                                                           \
-        printf("\n");                                                                                                  \
-        write_log(__VA_ARGS__);                                                                                        \
-    }
-#define LOG_E(...)                                                                                                     \
-    if (DEBUG || GLOBAL_DEBUG) {                                                                                       \
-        __android_log_print(ANDROID_LOG_ERROR, RENDERERNAME, __VA_ARGS__);                                             \
-        printf(__VA_ARGS__);                                                                                           \
-        printf("\n");                                                                                                  \
-        write_log(__VA_ARGS__);                                                                                        \
-    }
-#define LOG_F(...)                                                                                                     \
-    if (DEBUG || GLOBAL_DEBUG) {                                                                                       \
-        __android_log_print(ANDROID_LOG_FATAL, RENDERERNAME, __VA_ARGS__);                                             \
-        printf(__VA_ARGS__);                                                                                           \
-        printf("\n");                                                                                                  \
-        write_log(__VA_ARGS__);                                                                                        \
-    }
+#define LOG_D(...)                                                                                                         if (DEBUG || GLOBAL_DEBUG) {                                                                                               __android_log_print(ANDROID_LOG_DEBUG, RENDERERNAME, __VA_ARGS__);                                                     printf(__VA_ARGS__);                                                                                                   printf("
+");                                                                                                          write_log(__VA_ARGS__);                                                                                            }
+#define LOG_D_N(...)                                                                                                       if (DEBUG || GLOBAL_DEBUG) {                                                                                               __android_log_print(ANDROID_LOG_DEBUG, RENDERERNAME, __VA_ARGS__);                                                     printf(__VA_ARGS__);                                                                                                   write_log_n(__VA_ARGS__);                                                                                          }
+#define LOG_W(...)                                                                                                         if (DEBUG || GLOBAL_DEBUG) {                                                                                               __android_log_print(ANDROID_LOG_WARN, RENDERERNAME, __VA_ARGS__);                                                      printf(__VA_ARGS__);                                                                                                   printf("
+");                                                                                                          write_log(__VA_ARGS__);                                                                                            }
+#define LOG_E(...)                                                                                                         if (DEBUG || GLOBAL_DEBUG) {                                                                                               __android_log_print(ANDROID_LOG_ERROR, RENDERERNAME, __VA_ARGS__);                                                     printf(__VA_ARGS__);                                                                                                   printf("
+");                                                                                                          write_log(__VA_ARGS__);                                                                                            }
+#define LOG_F(...)                                                                                                         if (DEBUG || GLOBAL_DEBUG) {                                                                                               __android_log_print(ANDROID_LOG_FATAL, RENDERERNAME, __VA_ARGS__);                                                     printf(__VA_ARGS__);                                                                                                   printf("
+");                                                                                                          write_log(__VA_ARGS__);                                                                                            }
 #endif
 
-#define LOG_V(...)                                                                                                     \
-    {                                                                                                                  \
-        __android_log_print(ANDROID_LOG_VERBOSE, RENDERERNAME, __VA_ARGS__);                                           \
-        printf(__VA_ARGS__);                                                                                           \
-        printf("\n");                                                                                                  \
-        write_log(__VA_ARGS__);                                                                                        \
-    }
-#define LOG_I(...)                                                                                                     \
-    {                                                                                                                  \
-        __android_log_print(ANDROID_LOG_INFO, RENDERERNAME, __VA_ARGS__);                                              \
-        printf(__VA_ARGS__);                                                                                           \
-        printf("\n");                                                                                                  \
-        write_log(__VA_ARGS__);                                                                                        \
-    }
-#define LOG_W_FORCE(...)                                                                                               \
-    {                                                                                                                  \
-        __android_log_print(ANDROID_LOG_WARN, RENDERERNAME, __VA_ARGS__);                                              \
-        printf(__VA_ARGS__);                                                                                           \
-        printf("\n");                                                                                                  \
-        write_log(__VA_ARGS__);                                                                                        \
-    }
-#define LOG_E_FORCE(...)                                                                                               \
-    {                                                                                                                  \
-        __android_log_print(ANDROID_LOG_ERROR, RENDERERNAME, __VA_ARGS__);                                             \
-        printf(__VA_ARGS__);                                                                                           \
-        printf("\n");                                                                                                  \
-        write_log(__VA_ARGS__);                                                                                        \
-    }
+#define LOG_V(...)                                                                                                         {                                                                                                                          __android_log_print(ANDROID_LOG_VERBOSE, RENDERERNAME, __VA_ARGS__);                                                   printf(__VA_ARGS__);                                                                                                   printf("
+");                                                                                                          write_log(__VA_ARGS__);                                                                                            }
+#define LOG_I(...)                                                                                                         {                                                                                                                          __android_log_print(ANDROID_LOG_INFO, RENDERERNAME, __VA_ARGS__);                                                      printf(__VA_ARGS__);                                                                                                   printf("
+");                                                                                                          write_log(__VA_ARGS__);                                                                                            }
+#define LOG_W_FORCE(...)                                                                                                   {                                                                                                                          __android_log_print(ANDROID_LOG_WARN, RENDERERNAME, __VA_ARGS__);                                                      printf(__VA_ARGS__);                                                                                                   printf("
+");                                                                                                          write_log(__VA_ARGS__);                                                                                            }
+#define LOG_E_FORCE(...)                                                                                                   {                                                                                                                          __android_log_print(ANDROID_LOG_ERROR, RENDERERNAME, __VA_ARGS__);                                                     printf(__VA_ARGS__);                                                                                                   printf("
+");                                                                                                          write_log(__VA_ARGS__);                                                                                            }
 
 #define MOBILEGLUES_LOG_H
+
+// MG_LOG_* aliases — used by rendering_pipeline.cpp, gpu_driven.cpp, earlyZ.cpp
+// Maps the MG_ prefixed macros to the canonical LOG_* macros defined above.
+#define MG_LOG_E LOG_E
+#define MG_LOG_I LOG_I
+#define MG_LOG_W LOG_W
+#define MG_LOG_D LOG_D
+#define MG_LOG_V LOG_V
 
 #endif // MOBILEGLUES_LOG_H
