@@ -10,11 +10,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * Hook no tick do jogador para pré-carregar chunks no caminho da elytra.
+ * require=0: fallback gracioso se a assinatura do tick() mudar em versões futuras.
  */
 @Mixin(Player.class)
 public abstract class ElytraMixin {
 
-    @Inject(method = "tick", at = @At("TAIL"))
+    @Inject(method = "tick", at = @At("TAIL"), require = 0)
     private void onTickTail(CallbackInfo ci) {
         if (!MaliWorldConfig.ELYTRA_PREDICTOR) return;
 
