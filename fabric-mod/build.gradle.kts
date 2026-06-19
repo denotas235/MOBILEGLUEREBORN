@@ -1,5 +1,5 @@
 plugins {
-    id("fabric-loom") version "1.10-SNAPSHOT"
+    id("fabric-loom") version "1.17.11"
     id("maven-publish")
 }
 
@@ -16,15 +16,15 @@ repositories {
 }
 
 dependencies {
-    // Minecraft 1.21.1 com Mojang Official Mappings
-    minecraft("com.mojang:minecraft:1.21.1")
+    // Minecraft 1.21.11 com Mojang Official Mappings
+    minecraft("com.mojang:minecraft:1.21.11")
     mappings(loom.officialMojangMappings())
 
-    // Fabric Loader 0.16.9+
-    modImplementation("net.fabricmc:fabric-loader:0.16.9")
+    // Fabric Loader 0.19.3 (latest para 1.21.11)
+    modImplementation("net.fabricmc:fabric-loader:0.19.3")
 
-    // Fabric API para 1.21.1
-    modImplementation("net.fabricmc.fabric-api:fabric-api:0.107.0+1.21.1")
+    // Fabric API 0.141.4+1.21.11
+    modImplementation("net.fabricmc.fabric-api:fabric-api:0.141.4+1.21.11")
 }
 
 tasks.processResources {
