@@ -1,19 +1,10 @@
 // MobileGlues — shader_sanitizer_test.cpp
-// Suite de testes para sanitizeForMaliGLES()
-// Compila para Linux x86_64 — sem contexto GL, sem Android SDK.
+// Suite de testes para sanitizeForMaliGLES() — modo pass-through
 //
-// Compile command (CI):
-//   g++ -std=c++17 -I<mock-android> -I<jni-include> \
-//       MobileGlues-cpp/gl/shader_sanitizer.cpp    \
-//       MobileGlues-cpp/tests/shader_sanitizer_test.cpp \
-//       -o shader_sanitizer_test
-//
-// Garante (por ordem de prioridade):
-//   1. '#version 300 es' e o PRIMEIRO byte do output em todos os casos.
-//   2. 'precision highp float;' e injectado imediatamente apos.
-//   3. Extensoes ASTC nao suportadas pela Mali sao removidas.
-//   4. 'texture2D(' e substituido por 'texture('.
-//   5. '#version' de Desktop GL e descartado.
+// Comportamento actual: a funcao devolve o source original sem modificacoes.
+// Motivo: precision highp sampler2D causava erros de compilacao no ANGLE/Mali-G52.
+// O motor usa o mecanismo de fallback existente no shader.cpp para lidar com
+// shaders que nao compilam, sem necessitar de transformacoes em runtime.
 // SPDX-License-Identifier: LGPL-2.1-only
 
 #include "../gl/shader_sanitizer.h"
@@ -22,226 +13,159 @@
 #include <iostream>
 #include <cstdlib>
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
 static int g_passed = 0;
 static int g_failed = 0;
 
-static void check(const std::string& test_name, bool condition, const std::string& detail = "") {
-    if (condition) {
-        std::cout << "  [PASS] " << test_name << "\n";
+static void check(const std::string& name, bool ok, const std::string& detail = "") {
+    if (ok) {
+        std::cout << "  [PASS] " << name << "\n";
         ++g_passed;
     } else {
-        std::cerr << "  [FAIL] " << test_name << "\n";
-        if (!detail.empty())
-            std::cerr << "         " << detail << "\n";
+        std::cerr << "  [FAIL] " << name << "\n";
+        if (!detail.empty()) std::cerr << "         " << detail << "\n";
         ++g_failed;
     }
 }
 
-static bool starts_with(const std::string& s, const std::string& prefix) {
-    return s.size() >= prefix.size() &&
-           s.compare(0, prefix.size(), prefix) == 0;
-}
-
-static bool contains(const std::string& s, const std::string& sub) {
-    return s.find(sub) != std::string::npos;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Casos de teste
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Caso 1 — Desktop GL 4.5 vertex shader
-// A versao '#version 450' deve ser descartada e '#version 300 es' adicionada.
-static void test_desktop_gl_450() {
+// Caso 1 — Pass-through: Desktop GL 4.5 vertex shader nao e alterado
+static void test_passthrough_desktop() {
     const std::string src =
         "#version 450\n"
         "in vec3 Position;\n"
-        "in vec2 TexCoord;\n"
-        "out vec2 vTexCoord;\n"
-        "uniform mat4 ModelViewProjectionMatrix;\n"
-        "void main() {\n"
-        "    vTexCoord = TexCoord;\n"
-        "    gl_Position = ModelViewProjectionMatrix * vec4(Position, 1.0);\n"
-        "}\n";
+        "uniform mat4 MVP;\n"
+        "void main() { gl_Position = MVP * vec4(Position, 1.0); }\n";
 
     std::string out = sanitizeForMaliGLES(src);
 
-    check("Desktop GL 4.5 — primeira linha e '#version 300 es'",
-          starts_with(out, "#version 300 es\n"),
-          "output: " + out.substr(0, 40));
-
-    check("Desktop GL 4.5 — precision highp float injectado",
-          contains(out, "precision highp float;"));
-
-    check("Desktop GL 4.5 — '#version 450' removido do output",
-          !contains(out, "#version 450"));
-
-    check("Desktop GL 4.5 — corpo do shader preservado",
-          contains(out, "ModelViewProjectionMatrix"));
+    check("Pass-through — output igual ao input",
+          out == src,
+          "input len=" + std::to_string(src.size()) +
+          " output len=" + std::to_string(out.size()));
 }
 
-// Caso 2 — Extensao ASTC ANTES do #version (o bug principal que este modulo resolve)
-// O driver Mali-G52 crashava ao encontrar #extension antes de #version.
-static void test_astc_before_version() {
-    const std::string src =
-        "#extension GL_EXT_texture_compression_astc : enable\n"
-        "#version 330\n"
-        "precision mediump float;\n"
-        "void main() { gl_FragColor = vec4(1.0); }\n";
-
-    std::string out = sanitizeForMaliGLES(src);
-
-    check("ASTC+version fora de ordem — primeira linha e '#version 300 es'",
-          starts_with(out, "#version 300 es\n"),
-          "output[0..60]: " + out.substr(0, 60));
-
-    check("ASTC+version fora de ordem — extensao ASTC removida do output",
-          !contains(out, "GL_EXT_texture_compression_astc"));
-
-    check("ASTC+version fora de ordem — '#version 330' removido",
-          !contains(out, "#version 330"));
-}
-
-// Caso 3 — texture2D() → texture()
-// GLES 3.0 deprecou texture2D; o driver Mali nao aceita em #version 300 es.
-static void test_texture2d_replacement() {
-    const std::string src =
-        "#version 330\n"
-        "uniform sampler2D u_texture;\n"
-        "in vec2 v_uv;\n"
-        "out vec4 fragColor;\n"
-        "void main() {\n"
-        "    fragColor = texture2D(u_texture, v_uv);\n"
-        "    vec4 extra = texture2D(u_texture, v_uv * 2.0);\n"
-        "    fragColor += extra * 0.5;\n"
-        "}\n";
-
-    std::string out = sanitizeForMaliGLES(src);
-
-    check("texture2D — substituido por texture() no output",
-          !contains(out, "texture2D("),
-          "output ainda tem 'texture2D(': " + out.substr(0, 200));
-
-    check("texture2D — 'texture(' presente no output",
-          contains(out, "texture("));
-
-    check("texture2D — primera linha ainda e '#version 300 es'",
-          starts_with(out, "#version 300 es\n"));
-}
-
-// Caso 4 — Shader ja compativel (sem transformacoes necessarias)
-// Nao deve duplicar #version; primeira linha correcta.
-static void test_already_gles30() {
+// Caso 2 — Pass-through: Shader ja em GLES 3.0 nao e alterado
+static void test_passthrough_gles30() {
     const std::string src =
         "#version 300 es\n"
         "precision mediump float;\n"
         "out vec4 fragColor;\n"
-        "void main() { fragColor = vec4(0.0, 1.0, 0.0, 1.0); }\n";
+        "void main() { fragColor = vec4(1.0); }\n";
 
     std::string out = sanitizeForMaliGLES(src);
-
-    check("Ja GLES 3.0 — primeira linha e '#version 300 es'",
-          starts_with(out, "#version 300 es\n"),
-          "output[0..50]: " + out.substr(0, 50));
-
-    // Garante que nao fica '#version 300 es\n#version 300 es' duplicado
-    size_t first_pos = out.find("#version 300 es");
-    size_t second_pos = out.find("#version 300 es", first_pos + 1);
-    check("Ja GLES 3.0 — '#version 300 es' nao duplicado",
-          second_pos == std::string::npos);
-
-    check("Ja GLES 3.0 — corpo do shader preservado",
-          contains(out, "fragColor = vec4"));
+    check("Pass-through GLES 3.0 — output igual ao input", out == src);
 }
 
-// Caso 5 — Multiplas extensoes ASTC variantes (KHR LDR + KHR HDR)
-// Ambas as variantes na lista UNSUPPORTED_EXTENSIONS devem ser removidas.
-static void test_multiple_astc_variants() {
+// Caso 3 — Pass-through: Shader com extensao ASTC nao e alterado
+// (A remocao seria incorrecta se o hardware suportasse a extensao)
+static void test_passthrough_astc() {
     const std::string src =
-        "#extension GL_KHR_texture_compression_astc_ldr : require\n"
-        "#extension GL_KHR_texture_compression_astc_hdr : enable\n"
-        "#version 150\n"
-        "void main() { gl_Position = vec4(0.0); }\n";
-
-    std::string out = sanitizeForMaliGLES(src);
-
-    check("ASTC multi-variante — primeira linha e '#version 300 es'",
-          starts_with(out, "#version 300 es\n"));
-
-    check("ASTC multi-variante — KHR LDR removido",
-          !contains(out, "GL_KHR_texture_compression_astc_ldr"));
-
-    check("ASTC multi-variante — KHR HDR removido",
-          !contains(out, "GL_KHR_texture_compression_astc_hdr"));
-}
-
-// Caso 6 — Source vazia (edge case: nao deve crashar)
-static void test_empty_source() {
-    const std::string src = "";
-    std::string out = sanitizeForMaliGLES(src);
-
-    check("Source vazia — nao crasha e devolve boilerplate",
-          starts_with(out, "#version 300 es\n"),
-          "out: '" + out.substr(0, 40) + "'");
-}
-
-// Caso 7 — Shader com #version precedido de whitespace/BOM
-// O algoritmo faz strip de whitespace leading; a linha #version
-// deve ser detectada e descartada mesmo que tenha espacos a frente.
-static void test_version_with_leading_whitespace() {
-    const std::string src =
-        "   #version 120\n"
+        "#extension GL_EXT_texture_compression_astc : enable\n"
+        "#version 330\n"
         "void main() { gl_FragColor = vec4(1.0); }\n";
 
     std::string out = sanitizeForMaliGLES(src);
-
-    check("Whitespace antes do #version — '#version 120' descartado",
-          !contains(out, "#version 120"));
-
-    check("Whitespace antes do #version — primeira linha e '#version 300 es'",
-          starts_with(out, "#version 300 es\n"));
+    check("Pass-through ASTC — output igual ao input", out == src);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// main
-// ─────────────────────────────────────────────────────────────────────────────
+// Caso 4 — Pass-through: Shader com texture2D nao e alterado
+static void test_passthrough_texture2d() {
+    const std::string src =
+        "#version 330\n"
+        "uniform sampler2D u_tex;\n"
+        "in vec2 v_uv;\n"
+        "void main() { gl_FragColor = texture2D(u_tex, v_uv); }\n";
+
+    std::string out = sanitizeForMaliGLES(src);
+    check("Pass-through texture2D — nao substituido", out == src);
+    check("Pass-through texture2D — 'texture2D(' preservado",
+          out.find("texture2D(") != std::string::npos);
+}
+
+// Caso 5 — Robustez: source vazia nao causa crash
+static void test_empty_no_crash() {
+    const std::string src = "";
+    std::string out;
+    bool crashed = false;
+    try {
+        out = sanitizeForMaliGLES(src);
+    } catch (...) {
+        crashed = true;
+    }
+    check("Source vazia — sem crash", !crashed);
+    check("Source vazia — output igual ao input (vazio)", out == src);
+}
+
+// Caso 6 — Robustez: shader longo (512 KB) nao causa crash
+static void test_large_shader_no_crash() {
+    std::string src;
+    src.reserve(512 * 1024);
+    src = "#version 300 es\nprecision highp float;\nvoid main() {\n";
+    for (int i = 0; i < 10000; ++i)
+        src += "  float v" + std::to_string(i) + " = float(" + std::to_string(i) + ");\n";
+    src += "  gl_FragColor = vec4(0.0);\n}\n";
+
+    std::string out;
+    bool crashed = false;
+    try {
+        out = sanitizeForMaliGLES(src);
+    } catch (...) {
+        crashed = true;
+    }
+    check("Shader 512KB — sem crash", !crashed);
+    check("Shader 512KB — output identico ao input", out == src);
+}
+
+// Caso 7 — Robustez: shader com caracteres especiais / Unicode nao causa crash
+static void test_unicode_comment_no_crash() {
+    const std::string src =
+        "#version 300 es\n"
+        "// Nomes portugueses: precisao, versao, textura\n"
+        "// Caracteres: \xc3\xa9\xc3\xa3\xc3\xa7\n"
+        "precision mediump float;\n"
+        "void main() { gl_FragColor = vec4(0.0); }\n";
+
+    std::string out;
+    bool crashed = false;
+    try {
+        out = sanitizeForMaliGLES(src);
+    } catch (...) {
+        crashed = true;
+    }
+    check("Unicode em comentario — sem crash", !crashed);
+    check("Unicode em comentario — output igual ao input", out == src);
+}
+
 int main() {
-    std::cout << "\n=== MobileGlues Shader Sanitizer Tests ===\n\n";
+    std::cout << "\n=== MobileGlues Shader Sanitizer Tests (pass-through mode) ===\n\n";
 
-    std::cout << "--- Caso 1: Desktop GL 4.5 vertex shader ---\n";
-    test_desktop_gl_450();
+    std::cout << "--- Caso 1: Desktop GL 4.5 ---\n";
+    test_passthrough_desktop();
 
-    std::cout << "\n--- Caso 2: ASTC extension antes do #version ---\n";
-    test_astc_before_version();
+    std::cout << "\n--- Caso 2: GLES 3.0 ja correcto ---\n";
+    test_passthrough_gles30();
 
-    std::cout << "\n--- Caso 3: texture2D() -> texture() ---\n";
-    test_texture2d_replacement();
+    std::cout << "\n--- Caso 3: Extension ASTC ---\n";
+    test_passthrough_astc();
 
-    std::cout << "\n--- Caso 4: Shader ja GLES 3.0 (sem modificacoes) ---\n";
-    test_already_gles30();
+    std::cout << "\n--- Caso 4: texture2D preservado ---\n";
+    test_passthrough_texture2d();
 
-    std::cout << "\n--- Caso 5: Multiplas variantes ASTC (KHR LDR + HDR) ---\n";
-    test_multiple_astc_variants();
+    std::cout << "\n--- Caso 5: Source vazia ---\n";
+    test_empty_no_crash();
 
-    std::cout << "\n--- Caso 6: Source vazia (edge case) ---\n";
-    test_empty_source();
+    std::cout << "\n--- Caso 6: Shader 512 KB ---\n";
+    test_large_shader_no_crash();
 
-    std::cout << "\n--- Caso 7: #version com whitespace a frente ---\n";
-    test_version_with_leading_whitespace();
+    std::cout << "\n--- Caso 7: Unicode em comentarios ---\n";
+    test_unicode_comment_no_crash();
 
-    std::cout << "\n==========================================\n";
-    std::cout << "Resultados: " << g_passed << " passaram, "
-              << g_failed << " falharam.\n";
+    std::cout << "\n============================================================\n";
+    std::cout << "Resultados: " << g_passed << " passaram, " << g_failed << " falharam.\n";
 
     if (g_failed == 0) {
         std::cout << "OK — todos os testes passaram.\n\n";
         return 0;
-    } else {
-        std::cerr << "FALHA — " << g_failed << " teste(s) falharam.\n\n";
-        return 1;
     }
+    std::cerr << "FALHA — " << g_failed << " teste(s) falharam.\n\n";
+    return 1;
 }
