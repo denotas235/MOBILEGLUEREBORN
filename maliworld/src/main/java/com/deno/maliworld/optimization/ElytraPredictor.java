@@ -2,12 +2,15 @@ package com.deno.maliworld.optimization;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 
 /**
  * Pré-carrega chunks na trajetória da elytra.
  * Calcula posição estimada em 3s com base em velocidade + direção atuais.
+ *
+ * MC 1.21.11: addRegionTicket foi removido. Usa addTicketWithRadius(TicketType, ChunkPos, int).
  */
 public final class ElytraPredictor {
 
@@ -21,7 +24,6 @@ public final class ElytraPredictor {
         if (!(sp.level() instanceof ServerLevel level)) return;
 
         double vx = sp.getDeltaMovement().x;
-        double vy = sp.getDeltaMovement().y;
         double vz = sp.getDeltaMovement().z;
 
         double px = sp.getX() + vx * PREDICT_TICKS;
@@ -29,15 +31,10 @@ public final class ElytraPredictor {
 
         ChunkPos center = new ChunkPos((int) px >> 4, (int) pz >> 4);
 
-        for (int dx = -PRELOAD_RADIUS; dx <= PRELOAD_RADIUS; dx++) {
-            for (int dz = -PRELOAD_RADIUS; dz <= PRELOAD_RADIUS; dz++) {
-                level.getChunkSource().addRegionTicket(
-                    net.minecraft.server.level.TicketType.FORCED,
-                    new ChunkPos(center.x + dx, center.z + dz),
-                    0,
-                    new ChunkPos(center.x + dx, center.z + dz)
-                );
-            }
-        }
+        level.getChunkSource().addTicketWithRadius(
+            TicketType.FORCED,
+            center,
+            PRELOAD_RADIUS
+        );
     }
 }
