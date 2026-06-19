@@ -2,16 +2,14 @@ package com.deno.maliworld.feature;
 
 import com.deno.maliworld.worldgen.noise.FractalNoise;
 
-/** Escultora de rios sinuosos com leito de cascalho/areia. */
 public final class RiverCarver {
 
     private final FractalNoise riverNoise;
 
     public RiverCarver(long seed) {
-        this.riverNoise = new FractalNoise(3, 0.5f, 2.0f, seed ^ 0xR1VeRL);
+        this.riverNoise = new FractalNoise(3, 0.5f, 2.0f, seed ^ 0xB1EBL);
     }
 
-    /** Returns river depth (0 = no river, >0 = carve this many blocks). */
     public int getRiverDepth(int blockX, int blockZ) {
         if (!com.deno.maliworld.config.MaliWorldConfig.RIVERS_ENABLED) return 0;
         float v = Math.abs(riverNoise.sample(blockX / 600.0f, blockZ / 600.0f));
