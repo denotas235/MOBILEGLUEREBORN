@@ -1,1 +1,145 @@
-Ly8gTW9iaWxlR2x1ZXMgLSBHcmVlZHlNZXNoZXIuamF2YQovLyBHcmVlZHkgTWVzaGluZyDigJQgbWVyZ2VzIGFkamFjZW50IGlkZW50aWNhbCBibG9jayBmYWNlcyBpbnRvIHNpbmdsZSBxdWFkcwovLyBSZWR1Y2VzIHBlci1jaHVuayB2ZXJ0ZXggY291bnQgdXAgdG8gfjE2eCBvbiB1bmlmb3JtIHN1cmZhY2VzCi8vIE1DIDEuMjEuMTEgLyBNb2phbmcgTWFwcGluZ3MgY29tcGF0aWJsZQovLyBTUERYLUxpY2Vuc2UtSWRlbnRpZmllcjogTEdQTC0yLjEtb25seQpwYWNrYWdlIGNvbS5uZXh1cy5vcHRpbWl6YXRpb247CgppbXBvcnQgbmV0Lm1pbmVjcmFmdC5jb3JlLkJsb2NrUG9zOwppbXBvcnQgbmV0Lm1pbmVjcmFmdC5jb3JlLkRpcmVjdGlvbjsKaW1wb3J0IG5ldC5taW5lY3JhZnQuY29yZS5TZWN0aW9uUG9zOwppbXBvcnQgbmV0Lm1pbmVjcmFmdC53b3JsZC5sZXZlbC5ibG9jay5zdGF0ZS5CbG9ja1N0YXRlOwppbXBvcnQgbmV0Lm1pbmVjcmFmdC5jbGllbnQucmVuZGVyZXIuY2h1bmsuUmVuZGVyU2VjdGlvblJlZ2lvbjsKCmltcG9ydCBqYXZhLnV0aWwuQXJyYXlMaXN0OwppbXBvcnQgamF2YS51dGlsLkFycmF5czsKaW1wb3J0IGphdmEudXRpbC5MaXN0OwppbXBvcnQgamF2YS51dGlsLmNvbmN1cnJlbnQuQ29uY3VycmVudEhhc2hNYXA7CmltcG9ydCBqYXZhLnV0aWwuY29uY3VycmVudC5hdG9taWMuQXRvbWljTG9uZzsKCi8qKgogKiBQdXJlLUphdmEgZ3JlZWR5IG1lc2hpbmcgYWxnb3JpdGhtLgogKiBHcm91cHMgYWRqYWNlbnQgaWRlbnRpY2FsIGJsb2NrIGZhY2VzIGludG8gdGhlIGxhcmdlc3QgcG9zc2libGUgcXVhZHMsCiAqIGVsaW1pbmF0aW5nIHJlZHVuZGFudCB2ZXJ0ZXggZGF0YSBmb3IgdW5pZm9ybSBzdXJmYWNlcy4KICoKICogPGgzPk1DIDEuMjEuMTEgQVBJIG5vdGVzIChNb2phbmcgTWFwcGluZ3MpPC9oMz4KICogPHVsPgogKiAgIDxsaT57QGNvZGUgQmxvY2tTdGF0ZS5pc1NvbGlkUmVuZGVyKEJsb2NrR2V0dGVyLCBCbG9ja1Bvcyl9IHJlcXVpcmVzIHR3byBhcmdzIGluIDEuMjAuNCsuCiAqICAgICAgIFdlIHVzZSB7QGNvZGUgQmxvY2tTdGF0ZS5jYW5PY2NsdWRlKCl9IChuby1hcmcpIHdoaWNoIGlzIHRoZSBjb3JyZWN0IGVxdWl2YWxlbnQKICogICAgICAgZm9yIGZhY2UtbWVyZ2luZyBwdXJwb3NlcyDigJQgcmV0dXJucyB0cnVlIGZvciBmdWxseS1vcGFxdWUgYmxvY2tzLjwvbGk+CiAqICAgPGxpPntAY29kZSBSZW5kZXJTZWN0aW9uUmVnaW9uLmdldEJsb2NrU3RhdGUoQmxvY2tQb3MpfSDigJQgdW5jaGFuZ2VkLjwvbGk+CiAqIDwvdWw+CiAqLwpwdWJsaWMgZmluYWwgY2xhc3MgR3JlZWR5TWVzaGVyIHsKCiAgICAvKiogQSBtZXJnZWQgcmVjdGFuZ3VsYXIgZmFjZSByZWFkeSBmb3IgdmVydGV4IGVtaXNzaW9uLiAqLwogICAgcHVibGljIHJlY29yZCBNZXJnZWRRdWFkKAogICAgICAgIGludCB4LCBpbnQgeSwgaW50IHosCiAgICAgICAgaW50IHdpZHRoLCBpbnQgaGVpZ2h0LAogICAgICAgIERpcmVjdGlvbiBmYWNlLAogICAgICAgIEJsb2NrU3RhdGUgYmxvY2sKICAgICkge30KCiAgICAvLyDilIDilIAgQ29tcGlsZSB0cmFja2luZyAodXNlZCBieSBTZWN0aW9uQ29tcGlsZXJNaXhpbikg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACiAgICBwcml2YXRlIHN0YXRpYyBmaW5hbCBDb25jdXJyZW50SGFzaE1hcDxMb25nLCBMb25nPiBzQ29tcGlsZVN0YXJ0ID0gbmV3IENvbmN1cnJlbnRIYXNoTWFwPD4oKTsKICAgIHByaXZhdGUgc3RhdGljIGZpbmFsIEF0b21pY0xvbmcgdG90YWxRdWFkcyAgICA9IG5ldyBBdG9taWNMb25nKCk7CiAgICBwcml2YXRlIHN0YXRpYyBmaW5hbCBBdG9taWNMb25nIG1lcmdlZFF1YWRzICAgPSBuZXcgQXRvbWljTG9uZygpOwoKICAgIHB1YmxpYyBzdGF0aWMgdm9pZCBub3RpZnlDb21waWxlU3RhcnQoU2VjdGlvblBvcyBwb3MpIHsKICAgICAgICBsb25nIGtleSA9IFNlY3Rpb25Qb3MuYXNMb25nKHBvcy54KCksIHBvcy55KCksIHBvcy56KCkpOwogICAgICAgIHNDb21waWxlU3RhcnQucHV0KGtleSwgU3lzdGVtLm5hbm9UaW1lKCkpOwogICAgfQoKICAgIHB1YmxpYyBzdGF0aWMgZG91YmxlIGVsYXBzZWRNcyhTZWN0aW9uUG9zIHBvcykgewogICAgICAgIGxvbmcga2V5ID0gU2VjdGlvblBvcy5hc0xvbmcocG9zLngoKSwgcG9zLnkoKSwgcG9zLnooKSk7CiAgICAgICAgTG9uZyB0ID0gc0NvbXBpbGVTdGFydC5nZXQoa2V5KTsKICAgICAgICByZXR1cm4gdCA9PSBudWxsID8gLTEuMCA6IChTeXN0ZW0ubmFub1RpbWUoKSAtIHQpIC8gMV8wMDBfMDAwLjA7CiAgICB9CgogICAgcHVibGljIHN0YXRpYyBsb25nIGdldFRvdGFsUXVhZHMoKSAgeyByZXR1cm4gdG90YWxRdWFkcy5nZXQoKTsgfQogICAgcHVibGljIHN0YXRpYyBsb25nIGdldE1lcmdlZFF1YWRzKCkgeyByZXR1cm4gbWVyZ2VkUXVhZHMuZ2V0KCk7IH0KCiAgICAvLyDilIDilIAgR3JlZWR5IG1lc2ggYWxnb3JpdGhtIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgAoKICAgIC8qKgogICAgICogUHJvZHVjZXMgbWVyZ2VkIHF1YWRzIGZvciBvbmUgZmFjZSBkaXJlY3Rpb24gd2l0aGluIGEgMTZ4MTZ4MTYgc2VjdGlvbi4KICAgICAqCiAgICAgKiBAcGFyYW0gcmVnaW9uICAgICBjaHVuayBkYXRhIHByb3ZpZGVyCiAgICAgKiBAcGFyYW0gc2VjdGlvblBvcyBzZWN0aW9uIG9yaWdpbgogICAgICogQHBhcmFtIGZhY2UgICAgICAgd2hpY2ggZmFjZSBkaXJlY3Rpb24gdG8gcHJvY2VzcwogICAgICogQHJldHVybiBsaXN0IG9mIG1lcmdlZCBxdWFkcyAobWF5IGJlIGVtcHR5IGlmIG5vIGV4cG9zZWQgZmFjZXMpCiAgICAgKi8KICAgIHB1YmxpYyBMaXN0PE1lcmdlZFF1YWQ+IG1lc2goCiAgICAgICAgICAgIFJlbmRlclNlY3Rpb25SZWdpb24gcmVnaW9uLAogICAgICAgICAgICBTZWN0aW9uUG9zIHNlY3Rpb25Qb3MsCiAgICAgICAgICAgIERpcmVjdGlvbiBmYWNlKSB7CgogICAgICAgIExpc3Q8TWVyZ2VkUXVhZD4gcmVzdWx0ID0gbmV3IEFycmF5TGlzdDw+KCk7CiAgICAgICAgYm9vbGVhbltdW10gbWVyZ2VkID0gbmV3IGJvb2xlYW5bMTZdWzE2XTsKCiAgICAgICAgaW50IG94ID0gc2VjdGlvblBvcy5taW5CbG9ja1goKTsKICAgICAgICBpbnQgb3kgPSBzZWN0aW9uUG9zLm1pbkJsb2NrWSgpOwogICAgICAgIGludCBveiA9IHNlY3Rpb25Qb3MubWluQmxvY2taKCk7CgogICAgICAgIC8vIFUgPSBob3Jpem9udGFsIHN3ZWVwIGF4aXMsIFYgPSB2ZXJ0aWNhbCBzd2VlcCBheGlzLCBOID0gbGF5ZXIgbm9ybWFsCiAgICAgICAgaW50W10gdSA9IHVBeGlzKGZhY2UpLCB2ID0gdkF4aXMoZmFjZSksIG4gPSBuQXhpcyhmYWNlKTsKCiAgICAgICAgZm9yIChpbnQgbGF5ZXIgPSAwOyBsYXllciA8IDE2OyBsYXllcisrKSB7CiAgICAgICAgICAgIGNsZWFyR3JpZChtZXJnZWQpOwoKICAgICAgICAgICAgZm9yIChpbnQgaiA9IDA7IGogPCAxNjsgaisrKSB7CiAgICAgICAgICAgICAgICBmb3IgKGludCBpID0gMDsgaSA8IDE2OyBpKyspIHsKICAgICAgICAgICAgICAgICAgICBpZiAobWVyZ2VkW2ldW2pdKSBjb250aW51ZTsKCiAgICAgICAgICAgICAgICAgICAgaW50IGJ4ID0gb3ggKyAoblswXSAhPSAwID8gbGF5ZXIgOiAodVswXSAhPSAwID8gaSA6IGopKTsKICAgICAgICAgICAgICAgICAgICBpbnQgYnkgPSBveSArIChuWzFdICE9IDAgPyBsYXllciA6ICh1WzFdICE9IDAgPyBpIDogaikpOwogICAgICAgICAgICAgICAgICAgIGludCBieiA9IG96ICsgKG5bMl0gIT0gMCA/IGxheWVyIDogKHVbMl0gIT0gMCA/IGkgOiBqKSk7CgogICAgICAgICAgICAgICAgICAgIEJsb2NrU3RhdGUgYnMgPSBnZXRCbG9jayhyZWdpb24sIGJ4LCBieSwgYnopOwogICAgICAgICAgICAgICAgICAgIGlmICghY2FuTWVzaChicykpIGNvbnRpbnVlOwogICAgICAgICAgICAgICAgICAgIGlmICghaXNGYWNlRXhwb3NlZChyZWdpb24sIGJ4LCBieSwgYnosIGZhY2UpKSBjb250aW51ZTsKCiAgICAgICAgICAgICAgICAgICAgdG90YWxRdWFkcy5pbmNyZW1lbnRBbmRHZXQoKTsKCiAgICAgICAgICAgICAgICAgICAgLy8gRXhwYW5kIGluIFUgZGlyZWN0aW9uCiAgICAgICAgICAgICAgICAgICAgaW50IHdpZHRoID0gMTsKICAgICAgICAgICAgICAgICAgICB3aGlsZSAoaSArIHdpZHRoIDwgMTYgJiYgIW1lcmdlZFtpICsgd2lkdGhdW2pdKSB7CiAgICAgICAgICAgICAgICAgICAgICAgIGludCBueCA9IGJ4ICsgdVswXSp3aWR0aCwgbnkgPSBieSArIHVbMV0qd2lkdGgsIG56ID0gYnogKyB1WzJdKndpZHRoOwogICAgICAgICAgICAgICAgICAgICAgICBpZiAoIWNhbk1lcmdlKGJzLCBnZXRCbG9jayhyZWdpb24sIG54LCBueSwgbnopKSkgYnJlYWs7CiAgICAgICAgICAgICAgICAgICAgICAgIHdpZHRoKys7CiAgICAgICAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICAgICAgICAvLyBFeHBhbmQgaW4gViBkaXJlY3Rpb24KICAgICAgICAgICAgICAgICAgICBpbnQgaGVpZ2h0ID0gMTsKICAgICAgICAgICAgICAgICAgICBleHBhbmQ6CiAgICAgICAgICAgICAgICAgICAgd2hpbGUgKGogKyBoZWlnaHQgPCAxNikgewogICAgICAgICAgICAgICAgICAgICAgICBmb3IgKGludCBrID0gMDsgayA8IHdpZHRoOyBrKyspIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGlmIChtZXJnZWRbaStrXVtqK2hlaWdodF0pIGJyZWFrIGV4cGFuZDsKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGludCBueCA9IGJ4ICsgdVswXSprICsgdlswXSpoZWlnaHQ7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBpbnQgbnkgPSBieSArIHVbMV0qayArIHZbMV0qaGVpZ2h0OwogICAgICAgICAgICAgICAgICAgICAgICAgICAgaW50IG56ID0gYnogKyB1WzJdKmsgKyB2WzJdKmhlaWdodDsKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGlmICghY2FuTWVyZ2UoYnMsIGdldEJsb2NrKHJlZ2lvbiwgbngsIG55LCBueikpKSBicmVhayBleHBhbmQ7CiAgICAgICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgICAgICAgaGVpZ2h0Kys7CiAgICAgICAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICAgICAgICAvLyBNYXJrIG1lcmdlZCBjZWxscwogICAgICAgICAgICAgICAgICAgIGZvciAoaW50IGR2ID0gMDsgZHYgPCBoZWlnaHQ7IGR2KyspCiAgICAgICAgICAgICAgICAgICAgICAgIGZvciAoaW50IGR1ID0gMDsgZHUgPCB3aWR0aDsgZHUrKykKICAgICAgICAgICAgICAgICAgICAgICAgICAgIG1lcmdlZFtpK2R1XVtqK2R2XSA9IHRydWU7CgogICAgICAgICAgICAgICAgICAgIG1lcmdlZFF1YWRzLmluY3JlbWVudEFuZEdldCgpOwogICAgICAgICAgICAgICAgICAgIHJlc3VsdC5hZGQobmV3IE1lcmdlZFF1YWQoYngsIGJ5LCBieiwgd2lkdGgsIGhlaWdodCwgZmFjZSwgYnMpKTsKICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgfQogICAgICAgIH0KICAgICAgICByZXR1cm4gcmVzdWx0OwogICAgfQoKICAgIC8vIOKUgOKUgCBQcml2YXRlIGhlbHBlcnMg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACgogICAgcHJpdmF0ZSBCbG9ja1N0YXRlIGdldEJsb2NrKFJlbmRlclNlY3Rpb25SZWdpb24gcmVnaW9uLCBpbnQgeCwgaW50IHksIGludCB6KSB7CiAgICAgICAgdHJ5IHsgcmV0dXJuIHJlZ2lvbi5nZXRCbG9ja1N0YXRlKG5ldyBCbG9ja1Bvcyh4LCB5LCB6KSk7IH0KICAgICAgICBjYXRjaCAoRXhjZXB0aW9uIGUpIHsgcmV0dXJuIG51bGw7IH0KICAgIH0KCiAgICAvKioKICAgICAqIE1DIDEuMjEuMTE6IGNhbk9jY2x1ZGUoKSByZXBsYWNlcyB0aGUgbm8tYXJnIGlzU29saWRSZW5kZXIoKSB0aGF0IHdhcyByZW1vdmVkIGluIDEuMjAuNC4KICAgICAqIGNhbk9jY2x1ZGUoKSA9IHRydWUgZm9yIGZ1bGx5LW9wYXF1ZSBibG9ja3MgdGhhdCBoaWRlIHRoZWlyIG5laWdoYm9ycyDigJQgY29ycmVjdCBmb3IgZ3JlZWR5IG1lc2hpbmcuCiAgICAgKi8KICAgIHByaXZhdGUgYm9vbGVhbiBjYW5NZXNoKEJsb2NrU3RhdGUgYnMpIHsKICAgICAgICByZXR1cm4gYnMgIT0gbnVsbCAmJiAhYnMuaXNBaXIoKSAmJiAhYnMuaGFzQmxvY2tFbnRpdHkoKSAmJiBicy5jYW5PY2NsdWRlKCk7CiAgICB9CgogICAgcHJpdmF0ZSBib29sZWFuIGNhbk1lcmdlKEJsb2NrU3RhdGUgYSwgQmxvY2tTdGF0ZSBiKSB7CiAgICAgICAgcmV0dXJuIGIgIT0gbnVsbCAmJiBjYW5NZXNoKGEpICYmIGNhbk1lc2goYikgJiYgYS5nZXRCbG9jaygpID09IGIuZ2V0QmxvY2soKTsKICAgIH0KCiAgICAvKioKICAgICAqIEEgZmFjZSBpcyBleHBvc2VkIGlmIHRoZSBuZWlnaGJvciBibG9jayBkb2VzIE5PVCBvY2NsdWRlIGl0LgogICAgICogY2FuT2NjbHVkZSgpID0gZmFsc2UgZm9yIGFpciwgdHJhbnNwYXJlbnQsIGFuZCBwYXJ0aWFsIGJsb2Nrcy4KICAgICAqLwogICAgcHJpdmF0ZSBib29sZWFuIGlzRmFjZUV4cG9zZWQoUmVuZGVyU2VjdGlvblJlZ2lvbiByZWdpb24sIGludCB4LCBpbnQgeSwgaW50IHosIERpcmVjdGlvbiBkKSB7CiAgICAgICAgQmxvY2tTdGF0ZSBuYiA9IGdldEJsb2NrKHJlZ2lvbiwgeCArIGQuZ2V0U3RlcFgoKSwgeSArIGQuZ2V0U3RlcFkoKSwgeiArIGQuZ2V0U3RlcFooKSk7CiAgICAgICAgcmV0dXJuIG5iID09IG51bGwgfHwgIW5iLmNhbk9jY2x1ZGUoKTsKICAgIH0KCiAgICBwcml2YXRlIHN0YXRpYyB2b2lkIGNsZWFyR3JpZChib29sZWFuW11bXSBnKSB7IGZvciAoYm9vbGVhbltdIHIgOiBnKSBBcnJheXMuZmlsbChyLCBmYWxzZSk7IH0KCiAgICBwcml2YXRlIHN0YXRpYyBpbnRbXSB1QXhpcyhEaXJlY3Rpb24gZCkgewogICAgICAgIHJldHVybiBzd2l0Y2ggKGQpIHsgY2FzZSBVUCwgRE9XTiwgTk9SVEgsIFNPVVRIIC0+IG5ldyBpbnRbXXsxLDAsMH07IGRlZmF1bHQgLT4gbmV3IGludFtdezAsMSwwfTsgfTsKICAgIH0KICAgIHByaXZhdGUgc3RhdGljIGludFtdIHZBeGlzKERpcmVjdGlvbiBkKSB7CiAgICAgICAgcmV0dXJuIHN3aXRjaCAoZCkgeyBjYXNlIFVQLCBET1dOIC0+IG5ldyBpbnRbXXswLDAsMX07IGNhc2UgTk9SVEgsIFNPVVRIIC0+IG5ldyBpbnRbXXswLDEsMH07IGRlZmF1bHQgLT4gbmV3IGludFtdezAsMCwxfTsgfTsKICAgIH0KICAgIHByaXZhdGUgc3RhdGljIGludFtdIG5BeGlzKERpcmVjdGlvbiBkKSB7CiAgICAgICAgcmV0dXJuIHN3aXRjaCAoZCkgeyBjYXNlIFVQLCBET1dOIC0+IG5ldyBpbnRbXXswLDEsMH07IGNhc2UgTk9SVEgsIFNPVVRIIC0+IG5ldyBpbnRbXXswLDAsMX07IGRlZmF1bHQgLT4gbmV3IGludFtdezEsMCwwfTsgfTsKICAgIH0KfQo=
+// MobileGlues - GreedyMesher.java
+// Greedy Meshing - merges adjacent identical block faces into single quads
+// Reduces per-chunk vertex count up to ~16x on uniform surfaces
+// MC 1.21.11 / Mojang Mappings compatible
+// SPDX-License-Identifier: LGPL-2.1-only
+package com.nexus.optimization;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.SectionPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.renderer.chunk.RenderSectionRegion;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+
+/**
+ * Pure-Java greedy meshing algorithm.
+ * Groups adjacent identical block faces into the largest possible quads,
+ * eliminating redundant vertex data for uniform surfaces.
+ *
+ * MC 1.21.11 API change (Mojang Mappings):
+ *   BlockState.isSolidRender(BlockGetter, BlockPos) requires two args since 1.20.4.
+ *   We use BlockState.canOcclude() (no-arg) which is the correct equivalent
+ *   for face-merging - returns true for fully-opaque, neighbor-hiding blocks.
+ */
+public final class GreedyMesher {
+
+    public record MergedQuad(
+        int x, int y, int z,
+        int width, int height,
+        Direction face,
+        BlockState block
+    ) {}
+
+    private static final ConcurrentHashMap<Long, Long> sCompileStart = new ConcurrentHashMap<>();
+    private static final AtomicLong totalQuads  = new AtomicLong();
+    private static final AtomicLong mergedQuads = new AtomicLong();
+
+    public static void notifyCompileStart(SectionPos pos) {
+        long key = SectionPos.asLong(pos.x(), pos.y(), pos.z());
+        sCompileStart.put(key, System.nanoTime());
+    }
+
+    public static double elapsedMs(SectionPos pos) {
+        long key = SectionPos.asLong(pos.x(), pos.y(), pos.z());
+        Long t = sCompileStart.get(key);
+        return t == null ? -1.0 : (System.nanoTime() - t) / 1_000_000.0;
+    }
+
+    public static long getTotalQuads()  { return totalQuads.get(); }
+    public static long getMergedQuads() { return mergedQuads.get(); }
+
+    public List<MergedQuad> mesh(RenderSectionRegion region, SectionPos sectionPos, Direction face) {
+        List<MergedQuad> result = new ArrayList<>();
+        boolean[][] merged = new boolean[16][16];
+
+        int ox = sectionPos.minBlockX();
+        int oy = sectionPos.minBlockY();
+        int oz = sectionPos.minBlockZ();
+
+        int[] u = uAxis(face), v = vAxis(face), n = nAxis(face);
+
+        for (int layer = 0; layer < 16; layer++) {
+            clearGrid(merged);
+            for (int j = 0; j < 16; j++) {
+                for (int i = 0; i < 16; i++) {
+                    if (merged[i][j]) continue;
+
+                    int bx = ox + (n[0] != 0 ? layer : (u[0] != 0 ? i : j));
+                    int by = oy + (n[1] != 0 ? layer : (u[1] != 0 ? i : j));
+                    int bz = oz + (n[2] != 0 ? layer : (u[2] != 0 ? i : j));
+
+                    BlockState bs = getBlock(region, bx, by, bz);
+                    if (!canMesh(bs)) continue;
+                    if (!isFaceExposed(region, bx, by, bz, face)) continue;
+
+                    totalQuads.incrementAndGet();
+
+                    int width = 1;
+                    while (i + width < 16 && !merged[i + width][j]) {
+                        int nx = bx + u[0]*width, ny = by + u[1]*width, nz = bz + u[2]*width;
+                        if (!canMerge(bs, getBlock(region, nx, ny, nz))) break;
+                        width++;
+                    }
+
+                    int height = 1;
+                    expand:
+                    while (j + height < 16) {
+                        for (int k = 0; k < width; k++) {
+                            if (merged[i+k][j+height]) break expand;
+                            int nx = bx + u[0]*k + v[0]*height;
+                            int ny = by + u[1]*k + v[1]*height;
+                            int nz = bz + u[2]*k + v[2]*height;
+                            if (!canMerge(bs, getBlock(region, nx, ny, nz))) break expand;
+                        }
+                        height++;
+                    }
+
+                    for (int dv = 0; dv < height; dv++)
+                        for (int du = 0; du < width; du++)
+                            merged[i+du][j+dv] = true;
+
+                    mergedQuads.incrementAndGet();
+                    result.add(new MergedQuad(bx, by, bz, width, height, face, bs));
+                }
+            }
+        }
+        return result;
+    }
+
+    private BlockState getBlock(RenderSectionRegion region, int x, int y, int z) {
+        try { return region.getBlockState(new BlockPos(x, y, z)); }
+        catch (Exception e) { return null; }
+    }
+
+    /** MC 1.21.11: canOcclude() is the no-arg replacement for removed isSolidRender(). */
+    private boolean canMesh(BlockState bs) {
+        return bs != null && !bs.isAir() && !bs.hasBlockEntity() && bs.canOcclude();
+    }
+
+    private boolean canMerge(BlockState a, BlockState b) {
+        return b != null && canMesh(a) && canMesh(b) && a.getBlock() == b.getBlock();
+    }
+
+    private boolean isFaceExposed(RenderSectionRegion region, int x, int y, int z, Direction d) {
+        BlockState nb = getBlock(region, x + d.getStepX(), y + d.getStepY(), z + d.getStepZ());
+        return nb == null || !nb.canOcclude();
+    }
+
+    private static void clearGrid(boolean[][] g) { for (boolean[] r : g) Arrays.fill(r, false); }
+
+    private static int[] uAxis(Direction d) {
+        return switch (d) { case UP, DOWN, NORTH, SOUTH -> new int[]{1,0,0}; default -> new int[]{0,1,0}; };
+    }
+    private static int[] vAxis(Direction d) {
+        return switch (d) { case UP, DOWN -> new int[]{0,0,1}; case NORTH, SOUTH -> new int[]{0,1,0}; default -> new int[]{0,0,1}; };
+    }
+    private static int[] nAxis(Direction d) {
+        return switch (d) { case UP, DOWN -> new int[]{0,1,0}; case NORTH, SOUTH -> new int[]{0,0,1}; default -> new int[]{1,0,0}; };
+    }
+}
