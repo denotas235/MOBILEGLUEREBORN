@@ -16,15 +16,15 @@ repositories {
 }
 
 dependencies {
-    // Minecraft 1.21 com Mojang Official Mappings
-    minecraft("com.mojang:minecraft:1.21")
+    // Minecraft 1.21.1 com Mojang Official Mappings
+    minecraft("com.mojang:minecraft:1.21.1")
     mappings(loom.officialMojangMappings())
 
     // Fabric Loader 0.16.9+
     modImplementation("net.fabricmc:fabric-loader:0.16.9")
 
-    // Fabric API para 1.21
-    modImplementation("net.fabricmc.fabric-api:fabric-api:0.102.0+1.21")
+    // Fabric API para 1.21.1
+    modImplementation("net.fabricmc.fabric-api:fabric-api:0.107.0+1.21.1")
 }
 
 tasks.processResources {
