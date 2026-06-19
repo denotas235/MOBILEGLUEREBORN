@@ -1,33 +1,34 @@
 package com.deno.maliworld.mixin.optimization;
 
 import com.deno.maliworld.config.MaliWorldConfig;
-import net.minecraft.world.level.Explosion;
-import org.spongepowered.asm.mixin.Final;
+import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Mutable;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 /**
  * Limita o raio de explosão a máximo 6 blocos.
- * MC 1.21.11 Mojang mappings: net.minecraft.world.level.Explosion
+ * MC 1.21.11: Explosion é um record (imutável) — o campo radius não pode ser
+ * modificado via @Shadow. Em vez disso, interceptamos o argumento float radius
+ * no método Level.explode(...) antes de criar o record Explosion.
  *
- * Usa @Mutable + @Shadow para remover o final do campo radius em bytecode,
- * permitindo modificação antes de explode() calcular os blocos afectados.
+ * require=0: fallback gracioso se a assinatura mudar.
  */
-@Mixin(Explosion.class)
+@Mixin(Level.class)
 public abstract class ExplosionMixin {
 
-    @Mutable
-    @Shadow @Final private float radius;
-
-    @Inject(method = "explode", at = @At("HEAD"))
-    private void maliworld$limitRadius(CallbackInfo ci) {
-        if (!MaliWorldConfig.LIMIT_EXPLOSIONS) return;
-        if (this.radius > 6.0f) {
-            this.radius = 6.0f;
-        }
+    @ModifyArg(
+        method = "explode(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/damagesource/DamageSource;Lnet/minecraft/world/level/ExplosionDamageCalculator;DDDFZLnet/minecraft/world/level/Level$ExplosionInteraction;)V",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/level/Level;explode(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/damagesource/DamageSource;Lnet/minecraft/world/level/ExplosionDamageCalculator;DDDFZLnet/minecraft/world/level/Level$ExplosionInteraction;Lnet/minecraft/core/particles/ParticleOptions;Lnet/minecraft/core/particles/ParticleOptions;Lnet/minecraft/util/random/WeightedList;Lnet/minecraft/core/Holder;)V",
+            remap = true
+        ),
+        index = 6,
+        require = 0
+    )
+    private float maliworld$limitExplosionRadius(float radius) {
+        if (!MaliWorldConfig.LIMIT_EXPLOSIONS) return radius;
+        return Math.min(radius, 6.0f);
     }
 }
