@@ -1,6 +1,6 @@
 // MobileGlues - AstcTextureMixin.java
 // Intercepts TextureAtlas.upload() -> redirects to ASTC cache when available
-// MC 1.21.11 Mojang Mappings compatible
+// MC 1.21.11 Mojang Mappings: ResourceLocation was renamed to Identifier
 // SPDX-License-Identifier: LGPL-2.1-only
 package com.nexus.mixins;
 
@@ -8,7 +8,7 @@ import com.nexus.MobileGlues;
 import com.nexus.astcmod.NativeASTCLoader;
 import net.minecraft.client.renderer.texture.SpriteLoader;
 import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -22,15 +22,16 @@ import java.io.File;
  * the native lib via setNextAstcCache so that the subsequent GL texture upload
  * becomes a zero-copy glCompressedTexImage2D call.
  *
- * MC 1.21.11 / Mojang Mappings:
- * - TextureAtlas.location is ResourceLocation (not Identifier)
- * - upload(SpriteLoader.Preparations) signature; require=0 handles future changes
+ * <p>MC 1.21.11 / Mojang Mappings note:
+ * Mojang renamed ResourceLocation to Identifier in MC 1.21.11.
+ * The correct import is net.minecraft.resources.Identifier.
  */
 @Mixin(TextureAtlas.class)
 public abstract class AstcTextureMixin {
 
-    /** Mojang Mappings 1.21.11: field name is "location", type ResourceLocation */
-    @Shadow private ResourceLocation location;
+    @Shadow private Identifier location;
+    @Shadow private int width;
+    @Shadow private int height;
 
     @Inject(method = "upload", at = @At("HEAD"), require = 0)
     private void mg_tryAstcCache(SpriteLoader.Preparations prep, CallbackInfo ci) {
@@ -40,9 +41,8 @@ public abstract class AstcTextureMixin {
             String name = this.location.toString();
             String path = NativeASTCLoader.buildCachePath(name);
             if (new File(path).exists()) {
-                // Use prep dimensions — avoids shadow int fields that can shift across MC versions
-                int w = prep.width();
-                int h = prep.height();
+                int w = this.width  > 0 ? this.width  : prep.width();
+                int h = this.height > 0 ? this.height : prep.height();
                 MobileGlues.LOGGER.info("[MG-ASTC] Cache hit: {} ({}x{})", name, w, h);
                 NativeASTCLoader.setNextAstcCache(path, w, h);
             }
