@@ -1,7 +1,7 @@
-name: Build MobileGlues for iOS
+name: Build MobileGlues for macOS
 on: [push, workflow_dispatch]
 jobs:
-  build-ios:
+  build-macos:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
@@ -12,18 +12,15 @@ jobs:
       - name: Build MobileGlues
         run: |
           cd MobileGlues-cpp
-          wget https://github.com/leetal/ios-cmake/raw/master/ios.toolchain.cmake
           cmake -B build \
-            -DCMAKE_TOOLCHAIN_FILE=ios.toolchain.cmake \
-            -DSTATICLIB=OFF \
             -DMACOS=ON \
-            -DPLATFORM=OS64 \
+            -DSTATICLIB=OFF \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DCMAKE_C_FLAGS=-Wno-error=implicit-function-declaration
           cmake --build build --config RelWithDebInfo --target mobileglues
-          codesign -s - build/libmobileglues.dylib
 
       - name: Upload lib
         uses: actions/upload-artifact@v4
         with:
-          name: MobileGlues-iOS-dylib
-          path: /Users/runner/work/MobileGlues/MobileGlues/MobileGlues-cpp/build
+          name: MobileGlues-macOS-dylib
+          path: MobileGlues-cpp/build/libmobileglues.dylib
