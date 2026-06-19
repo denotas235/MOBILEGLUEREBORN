@@ -6,6 +6,7 @@
 #define TIME_OF_DAY_H
 
 #include <cmath>
+#include <algorithm>
 
 struct SkyState {
     float sunElevation = 0.5f;     // 0.0 = horizon, 1.0 = zenith
