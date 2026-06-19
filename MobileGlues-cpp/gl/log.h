@@ -146,11 +146,12 @@ void log_unique_function(const char* func_name);
 
 #define MOBILEGLUES_LOG_H
 
-// MG_LOG_* aliases used by rendering_pipeline.cpp, gpu_driven.cpp, earlyZ.cpp
-#define MG_LOG_E LOG_E
-#define MG_LOG_I LOG_I
-#define MG_LOG_W LOG_W
-#define MG_LOG_D LOG_D
-#define MG_LOG_V LOG_V
+// MG_LOG_* — self-contained logging aliases for rendering_pipeline, gpu_driven, earlyZ.
+// These bypass the DEBUG/write_log dependencies so new files compile independently.
+#define MG_LOG_E(...) __android_log_print(ANDROID_LOG_ERROR,   "MobileGlues", __VA_ARGS__)
+#define MG_LOG_W(...) __android_log_print(ANDROID_LOG_WARN,    "MobileGlues", __VA_ARGS__)
+#define MG_LOG_I(...) __android_log_print(ANDROID_LOG_INFO,    "MobileGlues", __VA_ARGS__)
+#define MG_LOG_D(...) __android_log_print(ANDROID_LOG_DEBUG,   "MobileGlues", __VA_ARGS__)
+#define MG_LOG_V(...) __android_log_print(ANDROID_LOG_VERBOSE, "MobileGlues", __VA_ARGS__)
 
 #endif // MOBILEGLUES_LOG_H
