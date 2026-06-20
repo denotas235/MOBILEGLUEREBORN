@@ -16,8 +16,6 @@
 #include "glsl/glsl_for_es.h"
 #include "../config/settings.h"
 #include "FSR1/FSR1.h"
-#include "phase2_lighting.h"
-#include "mali_sorter.h"
 
 #define DEBUG 0
 
@@ -102,29 +100,6 @@ void glShaderSource(GLuint shader, GLsizei count, const GLchar* const* string, c
         LOG_D("\n[INFO] [Shader] Converted Shader source: \n%s", essl_src.c_str())
     }
     if (!essl_src.empty()) {
-        // ── One-time system init (GLES context is guaranteed ready here) ────
-        static bool s_sysInited = false;
-        if (!s_sysInited) {
-            s_sysInited = true;
-            phase2_init();      // detect PLS / FBFetch caps
-            mali_sorter_init(); // load V-sight settings from JSON
-        }
-
-        // ── Determine shader stage ─────────────────────────────────────────
-        GLint shaderTypeFinal = GL_VERTEX_SHADER;
-        GLES.glGetShaderiv(shader, GL_SHADER_TYPE, &shaderTypeFinal);
-        bool isFrag = (shaderTypeFinal == GL_FRAGMENT_SHADER);
-
-        // ── Mali TBDR tile-memory optimizations ────────────────────────────
-        if (phase2_is_active()) {
-            essl_src = phase2_inject_pls(essl_src, isFrag);     // PLS light/shadow accum
-            essl_src = phase2_inject_fbfetch(essl_src);         // FBFetch zero-bandwidth blend
-            essl_src = phase2_inject_shadow(essl_src, isFrag);  // PCF shadow + light darkening
-        }
-
-        // ── AtmosV fog (peripheral haze for V-rendering) ──────────────────
-        essl_src = mali_sorter_inject_fog(essl_src, isFrag);
-
         shaderInfo.id = shader;
         shaderInfo.converted = essl_src;
         const char* s[] = {essl_src.c_str()};
