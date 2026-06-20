@@ -12,6 +12,7 @@
 #include "texture.h"
 #include "phase2_lighting.h"
 #include "mali_sorter.h"
+#include "../lighting/shadow_pipeline.h"
 #include <ankerl/unordered_dense.h>
 
 #define DEBUG 0
@@ -97,6 +98,36 @@ void prepareForDraw() {
     LOG_D("prepareForDraw...")
     if (hardware->emulate_texture_buffer) {
         setupBufferTextureUniforms(gl_state->current_program);
+    }
+
+    // ── ShadowPipeline: lazy init + per-draw uniform upload ───────────────────
+    // Creates the 1024×1024 shadow depth FBO the first time it is called.
+    // On every draw, uploads u_mg_lightMVP + binds the shadow map to unit 7
+    // for any shader that received phase2_inject_shadow() injection.
+    // Cost when no shadow uniforms present: one cached map lookup (~0 ns).
+    static bool s_shadowInited = false;
+    if (!s_shadowInited) {
+        s_shadowInited = true;
+        if (MG::shadowPipeline().init(1024)) {
+            // Default sun direction: 45° above south horizon (good for mid-day)
+            // Java mod (MaliWorld) will call mg_updateSunDirection() each tick
+            // to rotate this with the actual day/night cycle.
+            MG::shadowPipeline().updateLightDirection(0.5f, -0.7f, 0.5f);
+            LOG_D("[Shadow] ShadowPipeline ready — default sun dir (0.5,-0.7,0.5)");
+        } else {
+            LOG_D("[Shadow] ShadowPipeline init failed (device may lack depth FBO support)");
+        }
+    }
+
+    if (MG::shadowPipeline().isAvailable()) {
+        GLuint prog = gl_state->current_program;
+        if (prog) {
+            bool uploaded = MG::shadowPipeline().uploadShadowUniforms(prog);
+            if (uploaded) {
+                // Restore active texture unit that shadow map binding may have changed
+                GLES.glActiveTexture(GL_TEXTURE0 + gl_state->activeUnit);
+            }
+        }
     }
 }
 
