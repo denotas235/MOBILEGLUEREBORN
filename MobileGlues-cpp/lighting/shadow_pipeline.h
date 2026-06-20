@@ -20,6 +20,15 @@ public:
     GLuint shadowTex() const  { return m_tex; }
     float* lightMatrix()      { return m_lightMVP; }
 
+    // Update the sun/moon direction and rebuild the orthographic light MVP.
+    // lx,ly,lz: direction FROM light TO origin (not normalised — will be normalised internally).
+    // Called from Java via JNI each game tick to follow the day/night cycle.
+    void  updateLightDirection(float lx, float ly, float lz);
+
+    // Cached uniform locations per GL program (avoids glGetUniformLocation every draw).
+    // Returns true if this program has MG shadow uniforms and they were uploaded.
+    bool  uploadShadowUniforms(GLuint program);
+
 private:
     void   createResources(int sz);
     GLuint m_fbo=0, m_tex=0;
