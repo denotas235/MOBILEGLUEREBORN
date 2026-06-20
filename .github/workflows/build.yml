@@ -1,29 +1,158 @@
-name: Build MobileGlues for iOS
+name: Build MobileGlues for Android
+
 on: [push, workflow_dispatch]
+
 jobs:
-  build-ios:
-    runs-on: macos-latest
+  build-android:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
 
-      - name: Build MobileGlues
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r25b
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build
+
+      - name: Configure CMake for arm64-v8a
         run: |
           cd MobileGlues-cpp
-          wget https://github.com/leetal/ios-cmake/raw/master/ios.toolchain.cmake
-          cmake -B build \
-            -DCMAKE_TOOLCHAIN_FILE=ios.toolchain.cmake \
-            -DSTATICLIB=OFF \
-            -DMACOS=ON \
-            -DPLATFORM=OS64 \
-            -DCMAKE_C_FLAGS=-Wno-error=implicit-function-declaration
-          cmake --build build --config RelWithDebInfo --target mobileglues
-          codesign -s - build/libmobileglues.dylib
+          cmake -B build_arm64 \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-31 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_FLAGS="-O3 -fvisibility=hidden -funwind-tables -g -D_THREAD_SAFE -fPIC" \
+            -DCMAKE_C_FLAGS="-w -g -std=gnu99 -funwind-tables -fvisibility=hidden" \
+            -DBUILD_EXTERNAL=OFF
 
-      - name: Upload lib
+      - name: Build for arm64-v8a
+        run: |
+          cd MobileGlues-cpp
+          cmake --build build_arm64 --config Release --target mobileglues -- -j4
+
+      - name: Configure CMake for armeabi-v7a
+        run: |
+          cd MobileGlues-cpp
+          cmake -B build_arm32 \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=armeabi-v7a \
+            -DANDROID_PLATFORM=android-21 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_FLAGS="-O3 -fvisibility=hidden -funwind-tables -g -D_THREAD_SAFE -fPIC" \
+            -DCMAKE_C_FLAGS="-w -g -std=gnu99 -funwind-tables -fvisibility=hidden" \
+            -DBUILD_EXTERNAL=OFF
+
+      - name: Build for armeabi-v7a
+        run: |
+          cd MobileGlues-cpp
+          cmake --build build_arm32 --config Release --target mobileglues -- -j4
+
+      - name: Rename artifacts with architecture suffix
+        run: |
+          cp MobileGlues-cpp/build_arm64/libmobileglues.so libmobileglues-arm64-v8a.so
+          cp MobileGlues-cpp/build_arm32/libmobileglues.so libmobileglues-armeabi-v7a.so
+
+      - name: Upload arm64-v8a SO
         uses: actions/upload-artifact@v4
         with:
-          name: MobileGlues-iOS-dylib
-          path: /Users/runner/work/MobileGlues/MobileGlues/MobileGlues-cpp/build
+          name: libmobileglues-android-arm64
+          path: libmobileglues-arm64-v8a.so
+
+      - name: Upload armeabi-v7a SO
+        uses: actions/upload-artifact@v4
+        with:
+          name: libmobileglues-android-arm32
+          path: libmobileglues-armeabi-v7a.so
+
+  build-fabric-mod:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build Fabric mod (Minecraft 1.21.11 + Mojang Mappings)
+        run: ./gradlew -p fabric-mod build --no-daemon
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME_21_X64 }}
+
+      - name: Upload Fabric mod JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobileglues-mod-1.21.11
+          path: fabric-mod/build/libs/mobileglues-*.jar
+          if-no-files-found: error
+
+  build-maliworld-mod:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build MaliWorld mod (MC 1.21.11 + Mojang Mappings)
+        run: ./gradlew -p maliworld build --no-daemon
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME_21_X64 }}
+
+      - name: Upload MaliWorld JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: maliworld-mod-1.21.11
+          path: maliworld/build/libs/maliworld-*.jar
+          if-no-files-found: error
+
+  release:
+    needs: [build-android, build-fabric-mod, build-maliworld-mod]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "MobileGlues Build ${{ github.run_number }}"
+          tag_name: "build-${{ github.run_number }}"
+          generate_release_notes: false
+          files: |
+            libmobileglues-android-arm64/libmobileglues-arm64-v8a.so
+            libmobileglues-android-arm32/libmobileglues-armeabi-v7a.so
+            mobileglues-mod-1.21.11/*.jar
+            maliworld-mod-1.21.11/*.jar
