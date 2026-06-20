@@ -11,6 +11,7 @@
 #include "../config/settings.h"
 #include <string>
 #include <algorithm>
+#include <cstring>
 
 #define DEBUG 0
 
@@ -361,7 +362,7 @@ std::string phase2_inject_shadow(const std::string& glsl_src, bool is_fragment, 
     std::string sampler_binding = "layout(binding=" + std::to_string(shadow_unit) + ") ";
     std::string decl = std::string(SHADOW_INJECT_DECL);
     decl.replace(decl.find("uniform highp sampler2D u_mg_shadowMap;"),
-                 strlen("uniform highp sampler2D u_mg_shadowMap;"),
+                 std::string("uniform highp sampler2D u_mg_shadowMap;").size(),
                  sampler_binding + "uniform highp sampler2D u_mg_shadowMap;");
 
     std::string patched = version_line + decl + glsl_src.substr(insert_pos + 1);
