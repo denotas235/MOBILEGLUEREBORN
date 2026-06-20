@@ -61,4 +61,14 @@ void phase2_on_draw_call();
 // Reseta contadores por frame
 void phase2_on_frame_end();
 
+// Injeta lookup de sombra PCF + escurecimento dependente de luz em fragment shaders
+// shadow_unit = unidade de textura reservada para o shadow map (tipicamente 7)
+std::string phase2_inject_shadow(const std::string& glsl_src, bool is_fragment, int shadow_unit = 7);
+
+// Verifica se luzes coloridas estão disponíveis (PLS com campo light_color)
+bool phase2_colored_light_supported();
+
+// Retorna o ID da textura de shadow map atual (0 se não disponível)
+unsigned int phase2_shadow_tex();
+
 #endif // PHASE2_LIGHTING_H
