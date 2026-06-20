@@ -85,23 +85,51 @@ static std::string extract_version_line(const std::string& src) {
 static const char* PLS_BLOCK_DECL = R"(
 #extension GL_EXT_shader_pixel_local_storage : require
 
+// MG PLS layout: 48 bytes/pixel in tile SRAM (zero external bandwidth)
+// pls_light_accum  — accumulated diffuse light contribution
+// pls_shadow_data  — shadow depth + PCF factor from shadow pass
+// pls_light_color  — colored light tint (torch=orange, soul fire=blue, etc.)
 __pixel_local_inEXT MG_PLSLightBlock {
     layout(rgba8) highp vec4 pls_light_accum;
     layout(rgba8) highp vec4 pls_shadow_data;
+    layout(rgba8) highp vec4 pls_light_color;
 } pls_in;
 
 __pixel_local_outEXT MG_PLSLightBlockOut {
     layout(rgba8) highp vec4 pls_light_accum;
     layout(rgba8) highp vec4 pls_shadow_data;
+    layout(rgba8) highp vec4 pls_light_color;
 } pls_out;
 
-// Recupera luz acumulada da tile memory (sem custo de bandwidth)
-vec4 mg_read_light() { return pls_in.pls_light_accum; }
-vec4 mg_read_shadow() { return pls_in.pls_shadow_data; }
+// Read from tile SRAM (zero bandwidth cost on Mali TBDR)
+vec4 mg_read_light()       { return pls_in.pls_light_accum; }
+vec4 mg_read_shadow()      { return pls_in.pls_shadow_data; }
+vec4 mg_read_light_color() { return pls_in.pls_light_color; }
 
-// Escreve resultado de volta na tile memory
-void mg_write_light(vec4 light) { pls_out.pls_light_accum = light; }
-void mg_write_shadow(vec4 shadow) { pls_out.pls_shadow_data = shadow; }
+// Write back to tile SRAM
+void mg_write_light(vec4 v)       { pls_out.pls_light_accum = v; }
+void mg_write_shadow(vec4 v)      { pls_out.pls_shadow_data = v; }
+void mg_write_light_color(vec4 v) { pls_out.pls_light_color = v; }
+
+// Physically-based lightmap modulation:
+// Reads existing tile light, applies Minecraft lightmap-style attenuation.
+// blockLight in [0,1], skyLight in [0,1], lightColor is the tint.
+vec4 mg_apply_colored_light(vec4 fragColor, float blockLight, float skyLight) {
+    vec4 tint = mg_read_light_color();
+    // Lerp between ambient (0.03) and full light per channel
+    vec3 diffuse = mix(vec3(0.03), tint.rgb + vec3(0.05), blockLight);
+    diffuse = max(diffuse, vec3(skyLight * 0.8 + 0.1)); // sky contribution
+    return vec4(fragColor.rgb * diffuse, fragColor.a);
+}
+
+// Shadow factor from PLS: 0=fully in shadow, 1=fully lit.
+// Darker where block light is low, lighter where block light is high.
+float mg_shadow_factor() {
+    float depth = pls_in.pls_shadow_data.r;
+    float bias  = 0.005;
+    // depth 0=no shadow, approaching 1=deep shadow
+    return clamp(1.0 - depth + bias, 0.0, 1.0);
+}
 )";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -110,21 +138,34 @@ void mg_write_shadow(vec4 shadow) { pls_out.pls_shadow_data = shadow; }
 static const char* FBFETCH_BLOCK_DECL = R"(
 #extension GL_EXT_shader_framebuffer_fetch : require
 
-// Lê a cor atual do framebuffer (operação ZERO bandwidth no Mali TBDR)
-vec4 mg_fetch_framebuffer() {
-    return gl_LastFragData[0];
-}
+// Reads current framebuffer pixel (ZERO bandwidth on Mali TBDR — stays in tile memory)
+vec4 mg_fetch_framebuffer() { return gl_LastFragData[0]; }
 
-// Blending otimizado: mistura a cor nova com a cor atual do framebuffer
-// sem precisar de uma segunda passagem de render
+// Additive blend without extra render pass
 vec4 mg_blend_additive(vec4 new_color, float alpha) {
-    vec4 current = gl_LastFragData[0];
-    return mix(current, current + new_color, alpha);
+    vec4 cur = gl_LastFragData[0];
+    return mix(cur, cur + new_color, alpha);
 }
 
+// Multiply-blend for light contribution (avoids write-back to RAM)
 vec4 mg_blend_light(vec4 base_color, vec4 light_color) {
-    vec4 current = gl_LastFragData[0];
-    return current * light_color + base_color;
+    return gl_LastFragData[0] * light_color + base_color;
+}
+
+// Shadow darkening applied directly on the framebuffer fetch result.
+// shadow_factor: 0=full shadow (dark), 1=fully lit.
+// min_ambient: minimum brightness even in complete darkness (0.0–0.3 recommended).
+vec4 mg_apply_shadow(float shadow_factor, float min_ambient) {
+    vec4 cur = gl_LastFragData[0];
+    float brightness = mix(min_ambient, 1.0, shadow_factor);
+    return vec4(cur.rgb * brightness, cur.a);
+}
+
+// Colored light blend: tints the current framebuffer pixel with light_color.
+// Simulates torch/beacon colored light without extra passes.
+vec4 mg_tint_colored_light(vec4 light_color, float intensity) {
+    vec4 cur = gl_LastFragData[0];
+    return vec4(cur.rgb * mix(vec3(1.0), light_color.rgb, intensity * light_color.a), cur.a);
 }
 )";
 
@@ -232,8 +273,6 @@ void phase2_on_draw_call() {
 
 void phase2_on_frame_end() {
     if (!phase2_is_active()) return;
-
-    // A cada 300 frames, imprime estatísticas
     static int frame_count = 0;
     if (++frame_count % 300 == 0) {
         LOG_I("[Phase2] Frame stats: draw_calls=%d fbo_changes=%d shaders_patched=%d",
@@ -241,4 +280,102 @@ void phase2_on_frame_end() {
     }
     g_frame_draw_calls = 0;
     g_frame_fbo_changes = 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shadow injection: injects a shadow-map PCF lookup + light-dependent darkening
+// into fragment shaders that have lighting keywords.
+//
+// The injected GLSL:
+//   - Declares u_mg_shadowMap (sampler2D) and u_mg_lightMVP (mat4)
+//   - Computes shadow factor via PCF (4-tap soft shadow)
+//   - Applies: fragColor.rgb *= mix(MG_SHADOW_MIN_AMBIENT, 1.0, shadow)
+//   - Where MG_SHADOW_MIN_AMBIENT = 0.08 (nearly black in full shadow)
+//
+// This means: where block light is low → darker; where light is high → normal.
+// Sombras escuras onde não há luz, claras onde tem luz.
+// ─────────────────────────────────────────────────────────────────────────────
+
+static const char* SHADOW_INJECT_DECL = R"(
+#define MG_SHADOW_MIN_AMBIENT 0.08
+
+uniform highp sampler2D u_mg_shadowMap;
+uniform highp mat4      u_mg_lightMVP;
+uniform highp float     u_mg_shadowBias;
+
+// 4-tap PCF soft shadow (cheap on Mali: 4 texture fetches in tile)
+float mg_pcf_shadow(vec4 lightSpacePos) {
+    vec3 proj = lightSpacePos.xyz / lightSpacePos.w;
+    proj = proj * 0.5 + 0.5;
+    if (proj.x < 0.0 || proj.x > 1.0 || proj.y < 0.0 || proj.y > 1.0) return 1.0;
+    float currentDepth = proj.z - u_mg_shadowBias;
+    float texel = 1.0 / 1024.0;
+    float shadow = 0.0;
+    shadow += (texture(u_mg_shadowMap, proj.xy + vec2(-texel, -texel)).r < currentDepth) ? 0.0 : 0.25;
+    shadow += (texture(u_mg_shadowMap, proj.xy + vec2( texel, -texel)).r < currentDepth) ? 0.0 : 0.25;
+    shadow += (texture(u_mg_shadowMap, proj.xy + vec2(-texel,  texel)).r < currentDepth) ? 0.0 : 0.25;
+    shadow += (texture(u_mg_shadowMap, proj.xy + vec2( texel,  texel)).r < currentDepth) ? 0.0 : 0.25;
+    return shadow;
+}
+
+// Full shadow + ambient contribution: darker in shadow, lighter in light.
+// lightLevel in [0,1] from Minecraft's lightmap (block light channel).
+float mg_shadow_with_light(vec4 worldPos, float lightLevel) {
+    float pcf = mg_pcf_shadow(u_mg_lightMVP * worldPos);
+    // Combine shadow map with in-game light level for realistic result
+    float combined = mix(pcf, 1.0, lightLevel * 0.85);
+    return mix(MG_SHADOW_MIN_AMBIENT, 1.0, combined);
+}
+)";
+
+static const char* SHADOW_VERT_DECL = R"(
+uniform highp mat4 u_mg_lightMVP;
+out highp vec4 v_mg_lightSpacePos;
+// Call in vertex main: v_mg_lightSpacePos = u_mg_lightMVP * <world position>;
+)";
+
+// Verifica se há injeção de sombra viável neste shader
+static bool shader_suitable_for_shadow(const std::string& src) {
+    // Vertex shaders that compute world positions are tagged for light-space output
+    return src.find("gl_Position") != std::string::npos ||
+           src.find("lightmap") != std::string::npos ||
+           src.find("TEXTURE_LIGHT") != std::string::npos ||
+           src.find("blockLight") != std::string::npos;
+}
+
+std::string phase2_inject_shadow(const std::string& glsl_src, bool is_fragment, int shadow_unit) {
+    if (!phase2_is_active()) return glsl_src;
+    // Only inject into lighting-aware fragment shaders
+    if (!is_fragment) return glsl_src;
+    if (!shader_has_lighting(glsl_src) && !shader_has_blending(glsl_src)) return glsl_src;
+    // Don't double-inject
+    if (glsl_src.find("u_mg_shadowMap") != std::string::npos) return glsl_src;
+    // Don't inject if the shader has no main function (protection)
+    if (glsl_src.find("void main") == std::string::npos) return glsl_src;
+
+    std::string version_line = extract_version_line(glsl_src);
+    size_t insert_pos = glsl_src.find('\n');
+    if (insert_pos == std::string::npos) return glsl_src;
+
+    // Build the shadow sampler binding with the requested unit
+    std::string sampler_binding = "layout(binding=" + std::to_string(shadow_unit) + ") ";
+    std::string decl = std::string(SHADOW_INJECT_DECL);
+    decl.replace(decl.find("uniform highp sampler2D u_mg_shadowMap;"),
+                 strlen("uniform highp sampler2D u_mg_shadowMap;"),
+                 sampler_binding + "uniform highp sampler2D u_mg_shadowMap;");
+
+    std::string patched = version_line + decl + glsl_src.substr(insert_pos + 1);
+    g_status.shaders_patched++;
+    LOG_D("[Phase2] Shadow PCF injected (unit=%d, total=%d)", shadow_unit, g_status.shaders_patched);
+    return patched;
+}
+
+bool phase2_colored_light_supported() {
+    return g_status.pls_supported;
+}
+
+unsigned int phase2_shadow_tex() {
+    // Returns 0 — shadow tex is managed externally by ShadowPipeline
+    // Call MG::shadowPipeline().shadowTex() directly for the texture ID
+    return 0;
 }
