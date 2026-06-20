@@ -149,7 +149,7 @@ void ShadowPipeline::updateLightDirection(float lx, float ly, float lz) {
             m_lightMVP[col*4+row] = sum;
         }
     }
-    MG_LOG_D("ShadowPipeline: lightMVP updated dir=(%.2f,%.2f,%.2f)",lx,ly,lz);
+    MG_LOG_I("ShadowPipeline: lightMVP updated dir=(%.2f,%.2f,%.2f)",lx,ly,lz);
 }
 
 // ── uploadShadowUniforms ──────────────────────────────────────────────────
