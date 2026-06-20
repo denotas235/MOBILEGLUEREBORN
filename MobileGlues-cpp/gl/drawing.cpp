@@ -125,7 +125,7 @@ void prepareForDraw() {
             bool uploaded = MG::shadowPipeline().uploadShadowUniforms(prog);
             if (uploaded) {
                 // Restore active texture unit that shadow map binding may have changed
-                GLES.glActiveTexture(GL_TEXTURE0 + gl_state->activeUnit);
+                GLES.glActiveTexture(GL_TEXTURE0 + gl_state->current_tex_unit);
             }
         }
     }
