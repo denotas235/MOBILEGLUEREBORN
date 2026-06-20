@@ -29,6 +29,11 @@
 
 #define DEBUG 0
 
+// ASTC cache substitution (native_astc_loader.cpp)
+extern "C" bool mg_hasPendingAstc();
+extern "C" bool mg_applyPendingAstc();
+extern "C" bool mg_tryNativeAstcByDimensions(int w, int h);
+
 int nlevel(int size, int level) {
     if (size) {
         size >>= level;
