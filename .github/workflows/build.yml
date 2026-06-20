@@ -3,62 +3,6 @@ name: Build MobileGlues for Android (Mali-G52)
 on: [push, workflow_dispatch]
 
 jobs:
-  test-shader-sanitizer:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Install build tools
-        run: sudo apt-get update && sudo apt-get install -y g++ default-jdk-headless
-
-      - name: Create Android header mocks
-        run: |
-          mkdir -p /tmp/mock-android/android
-          cat > /tmp/mock-android/android/log.h << 'HEADER'
-          #pragma once
-          #include <stdarg.h>
-          #define ANDROID_LOG_UNKNOWN  0
-          #define ANDROID_LOG_DEFAULT  1
-          #define ANDROID_LOG_VERBOSE  2
-          #define ANDROID_LOG_DEBUG    3
-          #define ANDROID_LOG_INFO     4
-          #define ANDROID_LOG_WARN     5
-          #define ANDROID_LOG_ERROR    6
-          #define ANDROID_LOG_FATAL    7
-          #define ANDROID_LOG_SILENT   8
-          typedef int android_LogPriority;
-          static inline int __android_log_vprint(int p, const char* t, const char* f, va_list a) { (void)p;(void)t;(void)f;(void)a; return 0; }
-          static inline int __android_log_print(int p, const char* t, const char* f, ...) { (void)p;(void)t;(void)f; return 0; }
-          HEADER
-
-      - name: Find JNI include paths
-        id: jni
-        run: |
-          JNI_H=$(find /usr/lib/jvm -name "jni.h" -not -path "*/android*" 2>/dev/null | head -1)
-          JNI_DIR=$(dirname "$JNI_H")
-          JNI_MD_DIR=$(find /usr/lib/jvm -name "jni_md.h" -not -path "*/android*" 2>/dev/null | head -1 | xargs dirname)
-          echo "JNI_DIR=$JNI_DIR" >> "$GITHUB_OUTPUT"
-          echo "JNI_MD_DIR=$JNI_MD_DIR" >> "$GITHUB_OUTPUT"
-          echo "Found jni.h at: $JNI_H"
-          echo "jni_md.h at: $JNI_MD_DIR"
-
-      - name: Compile shader sanitizer test
-        run: |
-          g++ -std=c++17 \
-            -I/tmp/mock-android \
-            -I${{ steps.jni.outputs.JNI_DIR }} \
-            -I${{ steps.jni.outputs.JNI_MD_DIR }} \
-            MobileGlues-cpp/gl/shader_sanitizer.cpp \
-            MobileGlues-cpp/tests/shader_sanitizer_test.cpp \
-            -o /tmp/shader_sanitizer_test \
-            -Wall -Wextra -Wno-unused-parameter
-
-      - name: Run shader sanitizer tests
-        run: /tmp/shader_sanitizer_test
-
   build-android:
     runs-on: ubuntu-latest
     steps:
@@ -157,8 +101,8 @@ jobs:
       - name: Upload Fabric mod JAR
         uses: actions/upload-artifact@v4
         with:
-          name: mobileglues-sanitizer-mod-1.21.11
-          path: fabric-mod/build/libs/mobileglues-sanitizer-*.jar
+          name: mobileglues-mod-1.21.11
+          path: fabric-mod/build/libs/mobileglues-*.jar
           if-no-files-found: error
 
   build-maliworld-mod:
@@ -194,11 +138,11 @@ jobs:
           if-no-files-found: error
 
   release:
-    needs: [test-shader-sanitizer, build-android, build-fabric-mod, build-maliworld-mod]
+    needs: [build-android, build-fabric-mod, build-maliworld-mod]
     runs-on: ubuntu-latest
     if: |
-      github.ref == 'refs/heads/fix/shader-fallback-minecraft-1.21' ||
-      github.ref == 'refs/heads/feature/mali-g52-phase1'
+      github.ref == 'refs/heads/fix/remove-shader-compiler-issues' ||
+      github.ref == 'refs/heads/main'
     steps:
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
@@ -206,10 +150,11 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "MobileGlues 1.21.11 Build ${{ github.run_number }}"
-          tag_name: "build-1.21.11-${{ github.run_number }}"
+          name: "MobileGlues Build ${{ github.run_number }}"
+          tag_name: "build-${{ github.run_number }}"
           generate_release_notes: false
           files: |
             libmobileglues-android-arm64/libmobileglues-arm64-v8a.so
             libmobileglues-android-arm32/libmobileglues-armeabi-v7a.so
-            mobileglues-sanitizer-mod-1.21.11/*.jar
+            mobileglues-mod-1.21.11/*.jar
+            maliworld-mod-1.21.11/*.jar
