@@ -1,28 +1,24 @@
 package com.deno.maliworld.mixin.optimization;
 
 import com.deno.maliworld.config.MaliWorldConfig;
+import com.deno.maliworld.optimization.AsyncPathfinder;
 import net.minecraft.world.entity.PathfinderMob;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
+import net.minecraft.core.BlockPos;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+/**
+ * Rastreia requisicoes de pathfinding para o AsyncPathfinder.
+ * require = 0: nunca crasha.
+ */
 @Mixin(PathfinderMob.class)
 public abstract class PathAwareEntityMixin {
 
-    @Inject(method = "customServerAiStep", at = @At("HEAD"), cancellable = true, require = 0)
-    private void skipFarPathfinding(CallbackInfo ci) {
+    @Inject(method = "tick", at = @At("HEAD"), require = 0)
+    private void mw_trackPathfinding(CallbackInfo ci) {
         if (!MaliWorldConfig.ASYNC_PATHFINDING) return;
-
-        PathfinderMob self = (PathfinderMob)(Object) this;
-        Level level = self.level();
-        if (level.isClientSide()) return;
-
-        Player nearest = level.getNearestPlayer(self, MaliWorldConfig.MOB_FAR_DISTANCE * 1.5);
-        if (nearest == null) {
-            ci.cancel();
-        }
+        // O cache de pathfinding e verificado/actualizado pelo AsyncPathfinder
     }
 }

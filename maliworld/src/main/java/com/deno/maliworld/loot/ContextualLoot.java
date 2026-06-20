@@ -1,16 +1,21 @@
 package com.deno.maliworld.loot;
 
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /**
- * Define loot contextual para estruturas do MaliWorld.
- * MC 1.21.11: ResourceLocation foi renomeado para Identifier.
+ * Define qual tabela de loot usar baseado no contexto da estrutura.
  */
 public final class ContextualLoot {
 
-    public static final Identifier RUINS_LOOT    = Identifier.fromNamespaceAndPath("maliworld", "chests/ruins");
-    public static final Identifier FORTRESS_LOOT = Identifier.fromNamespaceAndPath("maliworld", "chests/fortress");
-    public static final Identifier TEMPLE_LOOT   = Identifier.fromNamespaceAndPath("maliworld", "chests/temple");
-
     private ContextualLoot() {}
+
+    public static ResourceLocation tableFor(String structureType, double distance) {
+        boolean isRare = distance > 2000;
+        return switch (structureType) {
+            case "ruins"    -> ResourceLocation.withDefaultNamespace(isRare ? "chests/stronghold_corridor"   : "chests/village_cartographer");
+            case "fortress" -> ResourceLocation.withDefaultNamespace("chests/nether_bridge");
+            case "temple"   -> ResourceLocation.withDefaultNamespace(isRare ? "chests/jungle_temple"        : "chests/desert_pyramid");
+            default         -> ResourceLocation.withDefaultNamespace("chests/simple_dungeon");
+        };
+    }
 }

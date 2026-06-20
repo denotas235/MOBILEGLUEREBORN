@@ -1,55 +1,70 @@
 // MobileGlues - MobileGluesClient.java
-// Fabric ClientModInitializer — registers sky-state tick update
+// Fabric ClientModInitializer — sky state + sun direction tick update
 // MC 1.21.11 / Mojang Mappings / Fabric API
 // SPDX-License-Identifier: LGPL-2.1-only
 package com.nexus;
 
+import com.nexus.astcmod.NativeASTCLoader;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 
 /**
- * Client-side entry point.
+ * Entry point do lado do cliente.
  *
- * <p>Responsibilities:
+ * <p>Responsabilidades:
  * <ol>
- *   <li>Log native library availability at startup.</li>
- *   <li>Register a per-tick callback that forwards the Minecraft level's
- *       day-time (0–24000) to the native sky-state engine as a 0.0–1.0
- *       float so that godrays, sun color, and atmospheric scattering
- *       track the in-game time of day.</li>
+ *   <li>Verifica disponibilidade da lib nativa ao iniciar.</li>
+ *   <li>Regista callback por tick que:
+ *       <ul>
+ *         <li>Actualiza o sky state (0.0–1.0 do tempo do dia) para godrays e scattering.</li>
+ *         <li>Actualiza a direccao do sol ({@code lx, ly, lz}) para o light MVP do shadow pipeline.</li>
+ *       </ul>
+ *   </li>
  * </ol>
  *
- * <p>All operations are wrapped in {@code try/catch} — this callback must
- * never crash the game under any circumstances.
+ * <p>Todas as operacoes estao em {@code try/catch} — este callback nunca crasha o jogo.
  */
 public final class MobileGluesClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
         MobileGlues.LOGGER.info(
-            "[MobileGlues] Client initialised — MC 1.21.11, native={}",
+            "[MobileGlues] Cliente inicializado — MC 1.21.11, native={}",
             MobileGlues.isAvailable());
 
         if (!MobileGlues.isAvailable()) {
             MobileGlues.LOGGER.warn(
-                "[MobileGlues] Native lib unavailable — GPU features disabled. " +
-                "Ensure libmobileglues.so is present in the APK/app lib dir.");
+                "[MobileGlues] Lib nativa indisponivel — features GPU desactivadas. " +
+                "Verifique se libmobileglues.so esta presente no APK/lib dir.");
             return;
         }
 
-        // Update atmospheric sky state every client tick.
-        // timeOfDay: 0.0 = midnight, 0.25 = sunrise, 0.5 = noon, 0.75 = sunset
+        // Actualiza sky state e sun direction a cada tick do cliente.
+        // timeOfDay: 0.0 = meia-noite, 0.25 = nascer, 0.5 = meio-dia, 0.75 = por
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.level == null) return;
             try {
-                long dayTime  = client.level.getDayTime();
+                long dayTime   = client.level.getDayTime();
                 float normalized = (dayTime % 24000L) / 24000.0f;
+
+                // 1. Sky state para godrays e scattering atmosferico
                 MobileGlues.updateSkyState(normalized);
+
+                // 2. Direccao do sol para light MVP do shadow pipeline
+                // O sol do Minecraft roda em torno do eixo X (Este-Oeste).
+                // angle=0 = meia-noite (sol abaixo do horizonte)
+                // angle=PI = meio-dia (sol directamente acima)
+                float sunAngle = normalized * (float)(Math.PI * 2.0);
+                float lx = 0.15f;                              // ligeiro desvio E-W
+                float ly = -(float)Math.cos(sunAngle);        // -1 = acima, +1 = abaixo
+                float lz = (float)Math.sin(sunAngle);         // rotacao N-S
+
+                NativeASTCLoader.updateSunDirection(lx, ly, lz);
             } catch (Throwable t) {
-                // Non-critical — silently swallow. Never logs in hot path.
+                // Nao-critico — ignora silenciosamente. Nunca loga em hot path.
             }
         });
 
-        MobileGlues.LOGGER.info("[MobileGlues] Sky-state tick registered.");
+        MobileGlues.LOGGER.info("[MobileGlues] Sky-state + sun-direction tick registados.");
     }
 }

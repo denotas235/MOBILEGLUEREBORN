@@ -1,11 +1,15 @@
 package com.deno.maliworld.structure;
 
-/** Gera templos de civilizações antigas em biomas específicos. */
+import com.deno.maliworld.noise.SimplexNoise;
+
+/**
+ * Placeholder: Templo antigo adaptado ao bioma.
+ */
 public final class AncientTemple {
 
     private AncientTemple() {}
 
-    public static boolean isEnabled() {
-        return com.deno.maliworld.config.MaliWorldConfig.TEMPLES_ENABLED;
+    public static boolean shouldSpawn(int chunkX, int chunkZ) {
+        return SimplexNoise.noise(chunkX * 0.07 + 600, chunkZ * 0.07 + 600) > 0.80;
     }
 }

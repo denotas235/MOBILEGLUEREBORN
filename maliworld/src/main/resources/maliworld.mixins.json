@@ -4,20 +4,25 @@
   "package": "com.deno.maliworld.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "optimization.ExplosionMixin",
+    "worldgen.NoiseChunkGeneratorMixin",
+    "worldgen.BiomeSourceMixin",
+    "worldgen.SurfaceBuilderMixin",
+    "feature.RiverMixin",
+    "feature.LakeMixin",
+    "structure.VillageStructureMixin",
+    "structure.StrongholdMixin",
+    "optimization.LightingProviderMixin",
     "optimization.MobEntityMixin",
     "optimization.PathAwareEntityMixin",
     "optimization.BlockBreakMixin",
-    "optimization.LightingProviderMixin",
-    "optimization.ChunkStorageMixin"
+    "optimization.ExplosionMixin"
   ],
   "client": [
     "optimization.EntityRendererMixin",
     "optimization.ElytraMixin",
-    "mesh.ChunkBuilderMixin",
-    "worldgen.NoiseChunkGeneratorMixin"
+    "mesh.ChunkBuilderMixin"
   ],
   "injectors": {
-    "defaultRequire": 1
+    "defaultRequire": 0
   }
 }

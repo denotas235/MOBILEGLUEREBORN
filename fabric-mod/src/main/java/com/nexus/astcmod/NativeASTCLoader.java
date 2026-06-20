@@ -1,15 +1,14 @@
 // MobileGlues - NativeASTCLoader.java
-// JNI bridge for ASTC cache loading
+// JNI bridge para ASTC cache, shadow pass e sun direction
 // SPDX-License-Identifier: LGPL-2.1-only
 package com.nexus.astcmod;
 
 import java.io.File;
 
 /**
- * JNI bridge to the native ASTC cache loader.
- * Pre-compressed ASTC textures live in /sdcard/MG/cache/.
- * When available, the C++ lib uploads via glCompressedTexImage2D directly,
- * bypassing CPU decompression entirely.
+ * JNI bridge ao loader nativo de ASTC e ao pipeline de sombras.
+ * Todas as chamadas nativas sao seguras: se a lib nao carregar,
+ * MobileGlues.isAvailable() retorna false e os mixins ignoram.
  */
 public final class NativeASTCLoader {
 
@@ -17,27 +16,54 @@ public final class NativeASTCLoader {
 
     private NativeASTCLoader() {}
 
+    // ── ASTC ──────────────────────────────────────────────────────────────────
+
     /**
-     * Tells the C++ lib to replace the NEXT glTexImage2D with ASTC from {@code path}.
-     * Call this right before the GL texture upload (e.g. at HEAD of TextureAtlas.upload).
+     * Diz ao C++ para substituir o proximo glTexImage2D por ASTC comprimido.
+     * Chame imediatamente antes do upload GL da textura.
      */
     public static native void setNextAstcCache(String path, int width, int height);
 
     /**
-     * Direct on-demand ASTC upload to the currently bound GL_TEXTURE_2D.
-     * Returns true on success.
+     * Upload direto ASTC para GL_TEXTURE_2D actualmente bound.
+     * @return true se bem-sucedido
      */
     public static native boolean uploadASTC(String path, int width, int height);
 
-    /** Returns true if an ASTC cache file exists for the given texture name. */
+    // ── SHADOW PASS ───────────────────────────────────────────────────────────
+
+    /**
+     * Actualiza a direccao do sol para o calculo do light MVP.
+     * Chame a cada tick do cliente com o angulo solar actual do Minecraft.
+     *
+     * @param lx componente X da direccao (sol → mundo)
+     * @param ly componente Y da direccao (negativo = apontando para baixo ao meio-dia)
+     * @param lz componente Z da direccao
+     */
+    public static native void updateSunDirection(float lx, float ly, float lz);
+
+    /**
+     * Inicia o shadow depth pre-pass.
+     * Liga o shadow FBO (1024×1024 depth-only) e desactiva escrita de cor.
+     * Chame ANTES de renderizar a geometria do terreno.
+     */
+    public static native void beginShadowPass();
+
+    /**
+     * Termina o shadow depth pre-pass.
+     * Restaura o FBO e viewport originais. Activa escrita de cor.
+     * Chame APOS renderizar a geometria do terreno.
+     */
+    public static native void endShadowPass();
+
+    // ── HELPERS ───────────────────────────────────────────────────────────────
+
+    /** Verifica se existe cache ASTC para o nome de textura dado. */
     public static boolean hasCachedAstc(String textureName) {
         return new File(buildCachePath(textureName)).exists();
     }
 
-    /**
-     * Converts a Minecraft resource location string (e.g. "minecraft:block/stone")
-     * to the absolute .astc cache path.
-     */
+    /** Converte um ResourceLocation string para o path .astc no cache. */
     public static String buildCachePath(String textureName) {
         String cleaned = textureName
                 .replace(":", "_")

@@ -3,17 +3,20 @@
   "id": "maliworld",
   "version": "${version}",
   "name": "MaliWorld",
-  "description": "Terreno realista, estruturas e otimizações para Mali-G52 — MC 1.21.11",
+  "description": "Terreno realista, otimizacoes GPU Mali-G52 e integracao MobileGlues para Minecraft 1.21.11",
   "authors": ["Deno"],
+  "contact": { "sources": "https://github.com/denotas235/MOBILEGLUEREBORN" },
+  "license": "LGPL-2.1",
   "environment": "*",
   "entrypoints": {
-    "main": ["com.deno.maliworld.MaliWorldMod"],
-    "client": ["com.deno.maliworld.MaliWorldMod"]
+    "main":   ["com.deno.maliworld.MaliWorldMod"],
+    "client": ["com.deno.maliworld.MaliWorldClientMod"]
   },
   "mixins": ["maliworld.mixins.json"],
   "depends": {
-    "fabricloader": ">=0.19.3",
-    "fabric-api": "*",
-    "minecraft": ">=1.21.11"
+    "fabricloader": ">=0.19.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
   }
 }

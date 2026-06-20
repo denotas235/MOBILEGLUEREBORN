@@ -1,11 +1,17 @@
 package com.deno.maliworld.structure;
 
-/** Cidades subterrâneas em câmaras naturais profundas (desativado por padrão). */
+import com.deno.maliworld.config.MaliWorldConfig;
+import com.deno.maliworld.noise.SimplexNoise;
+
+/**
+ * Placeholder: Cidade subterranea (pesada, desativada por padrao).
+ */
 public final class UndergroundCity {
 
     private UndergroundCity() {}
 
-    public static boolean isEnabled() {
-        return com.deno.maliworld.config.MaliWorldConfig.UNDERGROUND_CITIES;
+    public static boolean shouldSpawn(int chunkX, int chunkZ) {
+        return MaliWorldConfig.UNDERGROUND_CITIES &&
+               SimplexNoise.noise(chunkX * 0.03 + 800, chunkZ * 0.03 + 800) > 0.85;
     }
 }

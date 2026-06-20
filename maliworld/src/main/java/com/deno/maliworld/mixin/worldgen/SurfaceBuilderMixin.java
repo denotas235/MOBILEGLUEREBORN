@@ -1,20 +1,22 @@
 package com.deno.maliworld.mixin.worldgen;
 
-import net.minecraft.world.level.levelgen.SurfaceSystem;
+import com.deno.maliworld.config.MaliWorldConfig;
+import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Hook post-buildSurface para futuras decorações contextuais de superfície.
- * A lógica real de SurfaceDecorator está planeada para expansão futura.
- * require=0: fallback gracioso se a assinatura mudar.
+ * Intercepta a fase de construcao de superficie para aplicar o SurfaceDecorator.
  */
-@Mixin(value = SurfaceSystem.class, remap = true)
+@Mixin(NoiseBasedChunkGenerator.class)
 public abstract class SurfaceBuilderMixin {
 
     @Inject(method = "buildSurface", at = @At("RETURN"), require = 0)
-    private void maliworld$afterBuildSurface(CallbackInfo ci) {
+    private void mw_afterBuildSurface(CallbackInfo ci) {
+        if (!MaliWorldConfig.ENHANCED_TERRAIN) return;
+        // SurfaceDecorator.decorate(...) sera chamado aqui quando tivermos
+        // acesso aos argumentos via @Shadow ou @Inject com args
     }
 }
