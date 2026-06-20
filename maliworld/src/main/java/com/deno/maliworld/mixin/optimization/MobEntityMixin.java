@@ -10,16 +10,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Throttle de tick de mobs por distancia do jogador.
- * < 32 blocos: tick normal
- * 32-64 blocos: tick a cada 2
- * > 64 blocos:  tick a cada 4
- */
 @Mixin(Mob.class)
 public abstract class MobEntityMixin {
 
-    @Unique private int mw_skipCount = 0;
+    @Unique private int mw_skip = 0;
 
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true, require = 0)
     private void mw_throttle(CallbackInfo ci) {
@@ -27,23 +21,21 @@ public abstract class MobEntityMixin {
         try {
             Mob self = (Mob)(Object)this;
             if (!(self.level() instanceof ServerLevel level)) return;
-
-            Player nearest = level.getNearestPlayer(self, MaliWorldConfig.MOB_FAR_DISTANCE * 2.0);
+            Player nearest = level.getNearestPlayer(
+                self.getX(), self.getY(), self.getZ(),
+                MaliWorldConfig.MOB_FAR_DISTANCE * 2.0, false);
             if (nearest == null) {
-                // Sem jogador perto: tick a cada 4
-                if ((mw_skipCount++ & 3) != 0) { ci.cancel(); return; }
+                if ((mw_skip++ & 3) != 0) ci.cancel();
                 return;
             }
-
-            double distSq = self.distanceToSqr(nearest);
+            double dx = self.getX()-nearest.getX();
+            double dy = self.getY()-nearest.getY();
+            double dz = self.getZ()-nearest.getZ();
+            double dSq = dx*dx + dy*dy + dz*dz;
             int farSq  = MaliWorldConfig.MOB_FAR_DISTANCE  * MaliWorldConfig.MOB_FAR_DISTANCE;
             int nearSq = MaliWorldConfig.MOB_NEAR_DISTANCE * MaliWorldConfig.MOB_NEAR_DISTANCE;
-
-            if (distSq > farSq) {
-                if ((mw_skipCount++ & 3) != 0) { ci.cancel(); }
-            } else if (distSq > nearSq) {
-                if ((mw_skipCount++ & 1) != 0) { ci.cancel(); }
-            }
+            if (dSq > farSq) { if ((mw_skip++ & 3) != 0) ci.cancel(); }
+            else if (dSq > nearSq) { if ((mw_skip++ & 1) != 0) ci.cancel(); }
         } catch (Throwable t) { /* never crash */ }
     }
 }

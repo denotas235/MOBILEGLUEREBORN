@@ -1,50 +1,66 @@
 // MobileGlues - AstcTextureMixin.java
-// Intercepta TextureAtlas.upload() para usar cache ASTC quando disponivel
-// MC 1.21.11 Mojang Mappings: usa ResourceLocation (nao Identifier)
+// MC 1.21.11 — targets string + Object param para maxima compatibilidade
 // SPDX-License-Identifier: LGPL-2.1-only
 package com.nexus.mixins;
 
 import com.nexus.MobileGlues;
 import com.nexus.astcmod.NativeASTCLoader;
-import net.minecraft.client.renderer.texture.SpriteLoader;
-import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.io.File;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 /**
- * Intercepta {@link TextureAtlas#upload} para verificar se existe
- * uma versao ASTC pre-comprimida do atlas em /sdcard/MG/cache/.
- *
- * Correcao MC 1.21.11 Mojang Mappings:
- *   - ResourceLocation (Mojang) vs Identifier (Yarn) — usa ResourceLocation
- *   - Dimensoes obtidas de SpriteLoader.Preparations (record com width()/height())
- *   - Removido @Shadow de width/height que nao existem em TextureAtlas 1.21.11
+ * Intercepta TextureAtlas.upload() para cache ASTC.
+ * Usa reflexao — nao importa ResourceLocation nem SpriteLoader.Preparations
+ * para garantir compatibilidade maxima com MC 1.21.11.
+ * require=0: silenciosamente ignorado se upload() nao existir.
  */
-@Mixin(TextureAtlas.class)
+@Mixin(targets = "net.minecraft.client.renderer.texture.TextureAtlas")
 public abstract class AstcTextureMixin {
 
-    @Shadow private ResourceLocation location;
-
     @Inject(method = "upload", at = @At("HEAD"), require = 0)
-    private void mg_tryAstcCache(SpriteLoader.Preparations prep, CallbackInfo ci) {
-        if (!MobileGlues.isAvailable()) return;
+    private void mg_tryAstcCache(Object prep, CallbackInfo ci) {
+        if (!MobileGlues.isAvailable() || prep == null) return;
         try {
-            if (this.location == null || prep == null) return;
-            String name = this.location.toString();
+            String name = resolveAtlasName();
+            int w = getDim(prep, "width",  256);
+            int h = getDim(prep, "height", 256);
             String path = NativeASTCLoader.buildCachePath(name);
             if (new File(path).exists()) {
-                int w = prep.width()  > 0 ? prep.width()  : 256;
-                int h = prep.height() > 0 ? prep.height() : 256;
                 MobileGlues.LOGGER.info("[MG-ASTC] Cache hit: {} ({}x{})", name, w, h);
                 NativeASTCLoader.setNextAstcCache(path, w, h);
             }
-        } catch (Throwable t) {
-            MobileGlues.LOGGER.warn("[MG-ASTC] Erro ao verificar cache: {}", t.getMessage());
+        } catch (Throwable t) { /* never crash */ }
+    }
+
+    private String resolveAtlasName() {
+        for (String fn : new String[]{"location", "id", "atlasLocation", "textureLocation"}) {
+            try {
+                Class<?> c = this.getClass();
+                while (c != null && c != Object.class) {
+                    try {
+                        Field f = c.getDeclaredField(fn);
+                        f.setAccessible(true);
+                        Object v = f.get(this);
+                        if (v != null) return v.toString();
+                    } catch (NoSuchFieldException ignored) {}
+                    c = c.getSuperclass();
+                }
+            } catch (Throwable ignored) {}
         }
+        return this.toString();
+    }
+
+    private static int getDim(Object obj, String method, int def) {
+        try {
+            Method m = obj.getClass().getMethod(method);
+            Object r = m.invoke(obj);
+            if (r instanceof Integer iv && iv > 0) return iv;
+        } catch (Throwable ignored) {}
+        return def;
     }
 }
