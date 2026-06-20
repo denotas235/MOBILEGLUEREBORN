@@ -338,18 +338,16 @@ std::string GLSLtoGLSLES(const char* glsl_code, GLenum glsl_type, uint essl_vers
         LOG_D("GLSL Hit Cache:\n%s\n-->\n%s", glsl_code, cachedESSL)
         bool atomicCounterEmulated = checkIfAtomicCounterBufferEmulated(std::string(cachedESSL));
         return_code = atomicCounterEmulated ? 1 : 0;
-        return normalise_shader_header(std::string(cachedESSL), glsl_type, essl_version);
+        return (char*)cachedESSL;
     }
 
     return_code = -1;
+    // std::string converted = glsl_version<140? GLSLtoGLSLES_1(glsl_code, glsl_type, essl_version,
+    // return_code):GLSLtoGLSLES_2(glsl_code, glsl_type, essl_version, return_code);
     std::string converted = GLSLtoGLSLES_2(glsl_code, glsl_type, essl_version, return_code);
     if (return_code >= 0 && !converted.empty()) {
         converted = process_uniform_declarations(converted);
         Cache::get_instance().put(sha256_string.c_str(), converted.c_str());
-    }
-
-    if (return_code >= 0 && !converted.empty()) {
-        converted = normalise_shader_header(converted, glsl_type, essl_version);
     }
 
     return (return_code >= 0) ? converted : glsl_code;
