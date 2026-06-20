@@ -4,7 +4,6 @@
   "package": "com.nexus.mixins",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "MaliShaderSanitizerMixin",
     "AstcTextureMixin",
     "SectionCompilerMixin",
     "GameRendererMixin"
