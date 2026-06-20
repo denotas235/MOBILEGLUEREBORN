@@ -1,21 +1,26 @@
 package com.deno.maliworld.loot;
 
-import net.minecraft.resources.ResourceLocation;
-
 /**
- * Define qual tabela de loot usar baseado no contexto da estrutura.
+ * Seleciona a loot table adequada ao contexto da estrutura.
+ * Usa String em vez de ResourceLocation para compatibilidade maxima com MC 1.21.11.
  */
 public final class ContextualLoot {
 
     private ContextualLoot() {}
 
-    public static ResourceLocation tableFor(String structureType, double distance) {
-        boolean isRare = distance > 2000;
+    /**
+     * @return identificador da loot table no formato "namespace:path"
+     */
+    public static String tableFor(String structureType, double distanceFromSpawn) {
+        boolean rare = distanceFromSpawn > 2000;
         return switch (structureType) {
-            case "ruins"    -> ResourceLocation.withDefaultNamespace(isRare ? "chests/stronghold_corridor"   : "chests/village_cartographer");
-            case "fortress" -> ResourceLocation.withDefaultNamespace("chests/nether_bridge");
-            case "temple"   -> ResourceLocation.withDefaultNamespace(isRare ? "chests/jungle_temple"        : "chests/desert_pyramid");
-            default         -> ResourceLocation.withDefaultNamespace("chests/simple_dungeon");
+            case "ruins"    -> rare ? "minecraft:chests/stronghold_corridor"
+                                    : "minecraft:chests/village_cartographer";
+            case "fortress" -> "minecraft:chests/nether_bridge";
+            case "temple"   -> rare ? "minecraft:chests/jungle_temple"
+                                    : "minecraft:chests/desert_pyramid";
+            case "dungeon"  -> "minecraft:chests/simple_dungeon";
+            default         -> "minecraft:chests/simple_dungeon";
         };
     }
 }
