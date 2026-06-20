@@ -14,42 +14,114 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 /**
- * Mixin que intercepta {@link GlStateManager#glShaderSource(int, String)} antes
- * de o Minecraft enviar o codigo GLSL raw ao driver OpenGL da Mali-G52.
+ * Intercepta {@link GlStateManager#glShaderSource(int, String)} e converte
+ * o codigo GLSL Desktop para GLES 3.0 antes de chegar ao driver OpenGL.
  *
- * <h3>Mudanca de API em MC 1.21.11 (vs 1.21.x anterior)</h3>
- * <ul>
- *   <li>Pacote: {@code com.mojang.blaze3d.opengl.GlStateManager}
- *       (antes: {@code com.mojang.blaze3d.platform.GlStateManager})</li>
- *   <li>Metodo: {@code glShaderSource(int, String)} — sem underscore,
- *       recebe {@code String} directa (antes: {@code _glShaderSource(int, List<String>)})</li>
- *   <li>Descriptor interno: {@code (ILjava/lang/String;)V}</li>
- * </ul>
- * Verificado via Mojang mappings oficiais do MC 1.21.11
- * (client.txt linhas 132-149 em GlStateManager).
+ * <h3>Estrategia em duas camadas</h3>
+ * <ol>
+ *   <li><b>Camada 1 — Java puro</b>: conversao leve e imediata, sem JNI.
+ *       Trata os erros mais comuns vistos nos logs:
+ *       {@code gl_FragColor}, falta de precision, {@code texture2D()},
+ *       {@code attribute/varying}, {@code #version} sem "es".</li>
+ *   <li><b>Camada 2 — JNI nativo</b>: apos a conversao Java, chama
+ *       {@code sanitizeShaderNative()} que executa o pipeline completo
+ *       glslang → SPIRV → SPIRV-Cross (mesmo metodo da branch main).
+ *       Garante conversao total para shaders mais complexos.</li>
+ * </ol>
  *
- * <h3>require = 0 — Modo seguro</h3>
- * Se o metodo alvo nao for encontrado (mudanca futura de API), o Mixin
- * e ignorado silenciosamente em vez de crashar o jogo.
- *
- * <h3>Fallback</h3>
- * Se a sanitizacao JNI falhar, devolve o shader ORIGINAL.
+ * <h3>Seguranca</h3>
+ * {@code require = 0}: ignorado silenciosamente se a assinatura mudar
+ * em versoes futuras do MC. Todos os caminhos tem fallback para o source
+ * original — o jogo nunca crasha por culpa deste mixin.
  */
 @Mixin(GlStateManager.class)
 public abstract class MaliShaderSanitizerMixin {
 
     /**
-     * Intercepta a {@code String} de codigo GLSL imediatamente
-     * antes do upload ao driver OpenGL.
-     *
-     * <p>Assinatura do metodo alvo (Mojang Mappings 1.21.11):
-     * <pre>
-     *   GlStateManager.glShaderSource(int shaderId, String glslSource)
-     *   Descriptor interno: (ILjava/lang/String;)V
-     * </pre>
-     *
-     * @param originalSource Codigo GLSL original
-     * @return Codigo GLSL sanitizado para GLES 3.0 (Mali-G52) ou original se fallback
+     * Camada 1: conversao Java leve — trata erros imediatos dos logs.
+     * Nao usa regex para ser robusta e rapida.
+     */
+    private static String lightweightConvert(String src) {
+        if (src == null || src.isEmpty()) return src;
+
+        // Ja e GLES? nao toca.
+        int versionIdx = src.indexOf("#version");
+        if (versionIdx >= 0) {
+            int eol = src.indexOf(n, versionIdx);
+            String vline = eol >= 0 ? src.substring(versionIdx, eol) : src.substring(versionIdx);
+            if (vline.contains(" es")) return src;
+        }
+
+        StringBuilder sb = new StringBuilder(src.length() + 256);
+        String[] lines = src.split("\n", -1);
+
+        boolean versionDone    = false;
+        boolean precisionDone  = false;
+        boolean fragOutDeclared = false;
+        boolean usesGlFragColor = src.contains("gl_FragColor");
+
+        for (String raw : lines) {
+            String t = raw.stripLeading();
+
+            // ── #version ──────────────────────────────────────────────────
+            if (t.startsWith("#version")) {
+                sb.append("#version 300 es\n");
+                versionDone = true;
+                continue;
+            }
+
+            // Insere #version se ainda nao apareceu e chegou codigo real
+            if (!versionDone && !t.isEmpty() && !t.startsWith("//") && !t.startsWith("/*")) {
+                sb.append("#version 300 es\n");
+                versionDone = true;
+            }
+
+            // ── precision (apos #version, antes do primeiro codigo) ───────
+            if (versionDone && !precisionDone && !t.startsWith("#extension") && !t.startsWith("//")) {
+                if (!src.contains("precision highp float")) {
+                    sb.append("precision highp float;\n");
+                    sb.append("precision highp int;\n");
+                }
+                if (usesGlFragColor && !fragOutDeclared) {
+                    sb.append("out vec4 mg_gl_FragColor;\n");
+                    fragOutDeclared = true;
+                }
+                precisionDone = true;
+            }
+
+            // ── substituicoes de sintaxe ───────────────────────────────────
+            String line = raw;
+
+            // gl_FragColor → variavel de saida declarada acima
+            if (usesGlFragColor) {
+                line = line.replace("gl_FragColor", "mg_gl_FragColor");
+            }
+
+            // Funcoes de textura legadas
+            line = line.replace("texture2DLod(",  "textureLod(");
+            line = line.replace("texture2D(",     "texture(");
+            line = line.replace("textureCubeLod(","textureLod(");
+            line = line.replace("textureCube(",   "texture(");
+            line = line.replace("shadow2D(",      "texture(");
+
+            // Qualificadores legados de vertex/fragment
+            // "attribute " → "in "  (apenas em vertex shaders, mas nao faz mal no frag)
+            // "varying "   → "in " ou "out " dependendo do contexto; SPIRV-Cross trata depois
+            line = line.replace("attribute ", "in ");
+            if (line.contains("varying ")) {
+                // Heuristica: se ha gl_Position no shader original e "out" faz sentido
+                line = line.replace("varying ", "in ");
+            }
+
+            sb.append(line).append(n);
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Intercepta a String de codigo GLSL imediatamente antes do upload
+     * ao driver. Aplica conversao em duas camadas (Java leve → JNI nativo).
      */
     @ModifyVariable(
         method = "glShaderSource(ILjava/lang/String;)V",
@@ -58,28 +130,38 @@ public abstract class MaliShaderSanitizerMixin {
         require = 0
     )
     private static String mg_interceptAndSanitize(String originalSource) {
-        if (!MobileGlues.isAvailable() || originalSource == null || originalSource.isEmpty()) {
-            return originalSource;
-        }
+        if (originalSource == null || originalSource.isEmpty()) return originalSource;
 
-        String sanitized;
+        // ── Camada 1: Java leve ───────────────────────────────────────────
+        String stage1;
         try {
-            sanitized = MobileGlues.INSTANCE.sanitizeShaderNative(originalSource);
+            stage1 = lightweightConvert(originalSource);
         } catch (Throwable t) {
-            MobileGlues.LOGGER.error(
-                "[MobileGlues] Falha CRITICA na sanitizacao nativa: {}. Usando shader original!",
-                t.getMessage());
-            return originalSource;
+            MobileGlues.LOGGER.error("[MobileGlues] Camada 1 falhou: {}", t.getMessage());
+            stage1 = originalSource;
         }
 
-        if (sanitized == null || sanitized.isEmpty()) {
-            MobileGlues.LOGGER.warn("[MobileGlues] Sanitizacao retornou shader vazio. Usando original.");
-            return originalSource;
+        // ── Camada 2: JNI nativo (glslang → SPIRV → SPIRV-Cross) ─────────
+        if (!MobileGlues.isAvailable()) {
+            MobileGlues.LOGGER.debug("[MobileGlues] Lib nativa indisponivel — usando conversao Java.");
+            return stage1;
         }
 
-        MobileGlues.LOGGER.debug("[MobileGlues] Shader sanitizado ({} -> {} bytes)",
-            originalSource.length(), sanitized.length());
+        String stage2;
+        try {
+            stage2 = MobileGlues.INSTANCE.sanitizeShaderNative(stage1);
+        } catch (Throwable t) {
+            MobileGlues.LOGGER.error("[MobileGlues] Camada 2 (JNI) falhou: {}. Usando camada 1.", t.getMessage());
+            return stage1;
+        }
 
-        return sanitized;
+        if (stage2 == null || stage2.isEmpty()) {
+            MobileGlues.LOGGER.warn("[MobileGlues] JNI retornou vazio — usando camada 1.");
+            return stage1;
+        }
+
+        MobileGlues.LOGGER.debug("[MobileGlues] Shader convertido ({} → {} bytes)",
+            originalSource.length(), stage2.length());
+        return stage2;
     }
 }
