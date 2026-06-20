@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <android/log.h>
+#include "../lighting/shadow_pipeline.h"
 
 #define MLOG(...)  __android_log_print(ANDROID_LOG_INFO,  "MG_ASTC", __VA_ARGS__)
 #define MLOGE(...) __android_log_print(ANDROID_LOG_ERROR, "MG_ASTC", __VA_ARGS__)
@@ -105,6 +106,44 @@ Java_com_nexus_astcmod_NativeASTCLoader_uploadASTC(
     bool ok=p?doUpload(p,(int)w,(int)h):false;
     env->ReleaseStringUTFChars(jpath,p);
     return ok?JNI_TRUE:JNI_FALSE;
+}
+
+// ── Sun/Moon direction — called from MaliWorld mod each game tick ─────────────
+// The Minecraft day/night cycle rotates the sun around the X axis.
+// The Java mod reads Minecraft's internal sun angle and calls this every tick
+// (20x per second), keeping the shadow direction perfectly synchronised.
+//
+// lx, ly, lz: direction vector pointing FROM the sun/moon TOWARD the world.
+// E.g. at noon: (0, -1, 0) = directly above; at sunset: (1, 0, 0) = from east.
+extern "C" JNIEXPORT void JNICALL
+Java_com_nexus_astcmod_NativeASTCLoader_updateSunDirection(
+    JNIEnv*, jclass, jfloat lx, jfloat ly, jfloat lz) {
+    if (MG::shadowPipeline().isAvailable()) {
+        MG::shadowPipeline().updateLightDirection((float)lx, (float)ly, (float)lz);
+    }
+}
+
+// ── Shadow pass control — begin/end depth pre-pass from sun perspective ───────
+// The MaliWorld Java mod calls beginShadowPass() before rendering geometry,
+// then endShadowPass() after — this is all done inside a Minecraft render mixin.
+// The geometry rendered between these calls populates the 1024×1024 depth FBO
+// which is then sampled as u_mg_shadowMap in the main lighting pass.
+extern "C" JNIEXPORT void JNICALL
+Java_com_nexus_astcmod_NativeASTCLoader_beginShadowPass(
+    JNIEnv*, jclass) {
+    MG::shadowPipeline().beginShadowPass();
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_nexus_astcmod_NativeASTCLoader_endShadowPass(
+    JNIEnv*, jclass) {
+    MG::shadowPipeline().endShadowPass();
+}
+
+// Direct C API (used by shadow_pipeline internal calls, no JNI overhead)
+extern "C" void mg_updateSunDirection(float lx, float ly, float lz) {
+    if (MG::shadowPipeline().isAvailable())
+        MG::shadowPipeline().updateLightDirection(lx, ly, lz);
 }
 
 #endif
