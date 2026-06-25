@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background (metal base) -->
+    <item>
+        <shape android:shape="rectangle">
+            <size android:width="65dp" android:height="65dp" />
+            <corners android:radius="8dp" />
+            <solid android:color="#3A2E28" />
+            <stroke android:width="2dp" android:color="@color/steampunk_bronze" />
+        </shape>
+    </item>
+    
+    <!-- Lever (OFF position - left) -->
+    <item android:gravity="start|center_vertical" android:left="8dp">
+        <layer-list>
+            <!-- Lever base -->
+            <item>
+                <shape android:shape="rectangle">
+                    <size android:width="30dp" android:height="12dp" />
+                    <corners android:radius="6dp" />
+                    <solid android:color="#5A4A42" />
+                    <stroke android:width="1dp" android:color="@color/steampunk_bronze_dark" />
+                </shape>
+            </item>
+            <!-- Lever handle -->
+            <item android:gravity="start">
+                <shape android:shape="oval">
+                    <size android:width="16dp" android:height="16dp" />
+                    <solid android:color="@color/text_disabled" />
+                    <stroke android:width="1dp" android:color="#5A4A42" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+    
+    <!-- OFF text -->
+    <item android:gravity="end|center_vertical" android:right="8dp">
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="24dp"
+            android:height="16dp"
+            android:viewportWidth="24"
+            android:viewportHeight="16">
+            <path
+                android:fillColor="#5A4A42"
+                android:pathData="M12,2 C6.48,2 2,6.48 2,12 C2,17.52 6.48,22 12,22 C17.52,22 22,17.52 22,12 C22,6.48 17.52,2 12,2 Z M10,10 C10,8.9 8.9,8 8,8 C8,7.45 8.45,7 9,7 L15,7 C15.55,7 16,7.45 16,8 C16,8.9 14.9,10 14,10 L10,10 Z M10,14 C10,13.45 10.45,13 11,13 L13,13 C13.55,13 14,13.45 14,14 C14,15.1 15.1,16 16,16 C16,16.55 15.55,17 15,17 L9,17 C8.45,17 8,16.55 8,16 C8,15.1 9.1,14 10,14 Z" />
+        </vector>
+    </item>
+</layer-list>
