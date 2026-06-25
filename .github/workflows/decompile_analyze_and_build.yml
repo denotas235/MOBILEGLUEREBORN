@@ -1,0 +1,542 @@
+name: Decompile, Analyze, and Build NVR APK
+
+# =============================================================================
+# WORKFLOW COMPLETO PARA:
+# 1. Decompilar MobileGlRENDER_signed5.apk
+# 2. Analisar a libmobileglues.so e o fluxo do ANGLE
+# 3. Aplicar a nova interface Steampunk
+# 4. Recompilar e assinar
+# 5. Fazer push da NVR.apk final
+# =============================================================================
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Forçar rebuild mesmo se não houver mudanças'
+        required: false
+        default: 'false'
+
+jobs:
+  decompile_analyze_build:
+    name: Decompile, Analyze, and Build NVR APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      # =========================================================================
+      # PASSO 0: Configuração Inicial
+      # =========================================================================
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: nvr-steampunk-interface
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # =========================================================================
+      # PASSO 1: Instalar Dependências do Sistema
+      # =========================================================================
+      - name: Install system dependencies
+        run: |
+          echo "🔧 Instalando dependências do sistema..."
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            unzip \
+            zip \
+            zipalign \
+            wget \
+            imagemagick \
+            openjdk-17-jdk-headless \
+            git \
+            jq
+          echo "✅ Dependências instaladas"
+
+      # =========================================================================
+      # PASSO 2: Baixar e Instalar apktool
+      # =========================================================================
+      - name: Download and install apktool
+        run: |
+          echo "📥 Baixando apktool..."
+          wget -q https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool -O /usr/local/bin/apktool
+          wget -q https://bitbucket.org/iBotPeaches/apktool/raw/stable/apktool.jar -O /usr/local/bin/apktool.jar
+          chmod +x /usr/local/bin/apktool
+          
+          # Verificar versão
+          APKTOOL_VERSION=$(apktool --version 2>&1 || echo "unknown")
+          echo "✅ apktool instalado (versão: $APKTOOL_VERSION)"
+
+      # =========================================================================
+      # PASSO 3: Baixar apksigner
+      # =========================================================================
+      - name: Download apksigner
+        run: |
+          echo "📥 Baixando apksigner..."
+          # Tentar encontrar apksigner no sistema
+          if ! command -v apksigner &> /dev/null; then
+            # Baixar apksigner standalone
+            wget -q https://github.com/android/android-ktx/releases/download/1.12.0/apksigner.jar -O /usr/local/bin/apksigner.jar
+            echo '#!/bin/bash\njava -jar /usr/local/bin/apksigner.jar "$@"' > /usr/local/bin/apksigner
+            chmod +x /usr/local/bin/apksigner
+          fi
+          
+          APKSIGNER_VERSION=$(apksigner --version 2>&1 || echo "unknown")
+          echo "✅ apksigner instalado (versão: $APKSIGNER_VERSION)"
+
+      # =========================================================================
+      # PASSO 4: Verificar Arquivos Existentes
+      # =========================================================================
+      - name: Verify existing files
+        id: verify_files
+        run: |
+          echo "🔍 Verificando arquivos no repositório..."
+          
+          # Verificar APK base
+          if [ ! -f "MobileGlRENDER_signed5.apk" ]; then
+            echo "❌ APK base não encontrada!"
+            exit 1
+          fi
+          echo "✅ MobileGlRENDER_signed5.apk encontrada"
+          
+          # Verificar PNGs
+          if [ -f "1782380310184.png" ]; then
+            echo "✅ Ícone PNG encontrada (1782380310184.png)"
+          else
+            echo "⚠️  Ícone PNG não encontrada"
+          fi
+          
+          if [ -f "1782380458552.png" ]; then
+            echo "✅ Interface PNG encontrada (1782380458552.png)"
+          else
+            echo "⚠️  Interface PNG não encontrada"
+          fi
+          
+          # Verificar arquivos da interface
+          REQUIRED_FILES=(
+            "AndroidManifest.xml"
+            "mobileglues.conf"
+            "NexusVkBridge.smali"
+            "SettingsActivity.smali"
+            "res/layout/activity_settings.xml"
+            "res/values/colors.xml"
+            "res/values/strings.xml"
+            "res/values/styles.xml"
+          )
+          
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✅ $file encontrada"
+            else
+              echo "❌ $file NÃO encontrada!"
+              exit 1
+            fi
+          done
+          
+          echo "all_required_files=true" >> $GITHUB_OUTPUT
+
+      # =========================================================================
+      # PASSO 5: Criar Diretórios de Trabalho
+      # =========================================================================
+      - name: Create working directories
+        run: |
+          echo "📁 Criando diretórios de trabalho..."
+          mkdir -p work/decompiled
+          mkdir -p work/build
+          mkdir -p work/output
+          echo "✅ Diretórios criados"
+
+      # =========================================================================
+      # PASSO 6: Decompilar a APK Base
+      # =========================================================================
+      - name: Decompile base APK
+        id: decompile
+        run: |
+          echo "🔧 Decompilando MobileGlRENDER_signed5.apk..."
+          
+          # Decompilar
+          apktool d MobileGlRENDER_signed5.apk -o work/decompiled -f --force-manifest
+          
+          if [ ! -d "work/decompiled" ]; then
+            echo "❌ Falha ao decompilar APK"
+            exit 1
+          fi
+          
+          echo "✅ APK decompilada em: work/decompiled/"
+          
+          # Listar estrutura
+          echo ""
+          echo "📂 Estrutura da APK decompilada:"
+          find work/decompiled -type f | head -20
+          
+          # Verificar se libmobileglues.so existe
+          if [ -f "work/decompiled/lib/arm64-v8a/libmobileglues.so" ]; then
+            echo "✅ libmobileglues.so encontrada na APK decompilada!"
+            
+            # Analisar a lib
+            echo ""
+            echo "🔍 Analisando libmobileglues.so..."
+            
+            # Extrair strings
+            strings work/decompiled/lib/arm64-v8a/libmobileglues.so > work/lib_strings.txt 2>/dev/null || true
+            
+            # Filtrar por termos importantes
+            grep -i -E "angle|nvr|vulkan|glsl|shader|init|config|native|jni|mobileglue" work/lib_strings.txt > work/lib_analysis.txt 2>/dev/null || true
+            
+            echo "✅ Análise da lib concluída (work/lib_analysis.txt)"
+            
+            # Mostrar parte da análise
+            echo ""
+            echo "📄 Funções encontradas na lib:"
+            head -20 work/lib_analysis.txt || echo "Nenhum resultado"
+            
+          else
+            echo "⚠️  libmobileglues.so NÃO encontrada na APK decompilada"
+            echo "    Isso é normal - a lib pode estar em outro local ou a APK pode não incluí-la"
+          fi
+          
+          # Verificar NexusVkBridge.smali
+          NEXUS_VK_BRIDGE=$(find work/decompiled/smali -name "*NexusVk*" -o -name "*VkBridge*" 2>/dev/null | head -1)
+          if [ -n "$NEXUS_VK_BRIDGE" ]; then
+            echo "✅ NexusVkBridge.smali encontrada em: $NEXUS_VK_BRIDGE"
+            echo ""
+            echo "📄 Conteúdo de NexusVkBridge.smali (primeiras linhas):"
+            head -30 "$NEXUS_VK_BRIDGE"
+          else
+            echo "⚠️  NexusVkBridge.smali NÃO encontrada na APK decompilada"
+            echo "    Isso significa que a interface JNI pode estar em outro local"
+          fi
+          
+          # Verificar mobileglues.conf
+          if [ -f "work/decompiled/assets/mobileglues.conf" ]; then
+            echo "✅ mobileglues.conf encontrada na APK decompilada"
+            echo ""
+            echo "📄 Conteúdo de mobileglues.conf:"
+            cat work/decompiled/assets/mobileglues.conf
+          else
+            echo "⚠️  mobileglues.conf NÃO encontrada na APK decompilada"
+          fi
+          
+          echo "decompiled=true" >> $GITHUB_OUTPUT
+
+      # =========================================================================
+      # PASSO 7: Analisar o Fluxo do ANGLE
+      # =========================================================================
+      - name: Analyze ANGLE flow
+        if: steps.decompile.outputs.decompiled == 'true'
+        run: |
+          echo "🔍 Analisando fluxo do ANGLE..."
+          
+          # Procurar por loadLibrary
+          echo ""
+          echo "📄 Procurando por loadLibrary:"
+          grep -r "loadLibrary" work/decompiled/smali/ | head -5 || echo "Nenhum resultado"
+          
+          # Procurar por mobileglues
+          echo ""
+          echo "📄 Procurando por mobileglues:"
+          grep -r "mobileglues" work/decompiled/smali/ | head -5 || echo "Nenhum resultado"
+          
+          # Procurar por ANGLE
+          echo ""
+          echo "📄 Procurando por ANGLE:"
+          grep -r -i "angle" work/decompiled/smali/ | grep -v ".line" | head -10 || echo "Nenhum resultado"
+          
+          # Procurar por setAngleMode
+          echo ""
+          echo "📄 Procurando por setAngleMode:"
+          grep -r "setAngleMode" work/decompiled/smali/ | head -5 || echo "Nenhum resultado"
+          
+          # Procurar por enableANGLE
+          echo ""
+          echo "📄 Procurando por enableANGLE:"
+          grep -r "enableANGLE" work/decompiled/smali/ | head -5 || echo "Nenhum resultado"
+          
+          echo "✅ Análise do fluxo do ANGLE concluída"
+
+      # =========================================================================
+      # PASSO 8: Criar Backup da Estrutura Original
+      # =========================================================================
+      - name: Create backup of original structure
+        if: steps.decompile.outputs.decompiled == 'true'
+        run: |
+          echo "💾 Criando backup da estrutura original..."
+          cp -r work/decompiled work/decompiled.backup
+          echo "✅ Backup criado em: work/decompiled.backup/"
+
+      # =========================================================================
+      # PASSO 9: Aplicar Nova Interface Steampunk
+      # =========================================================================
+      - name: Apply Steampunk interface
+        if: steps.decompile.outputs.decompiled == 'true'
+        run: |
+          echo "🎨 Aplicando interface Steampunk..."
+          
+          # 1. AndroidManifest.xml
+          cp AndroidManifest.xml work/decompiled/AndroidManifest.xml
+          echo "✅ AndroidManifest.xml aplicado"
+          
+          # 2. mobileglues.conf
+          mkdir -p work/decompiled/assets
+          cp mobileglues.conf work/decompiled/assets/mobileglues.conf
+          echo "✅ mobileglues.conf aplicado"
+          
+          # 3. NexusVkBridge.smali
+          mkdir -p work/decompiled/smali/com/nexus/vulkan
+          cp NexusVkBridge.smali work/decompiled/smali/com/nexus/vulkan/NexusVkBridge.smali
+          echo "✅ NexusVkBridge.smali aplicado"
+          
+          # 4. SettingsActivity.smali
+          cp smali/com/nexus/vulkan/SettingsActivity.smali work/decompiled/smali/com/nexus/vulkan/SettingsActivity.smali
+          echo "✅ SettingsActivity.smali aplicado"
+          
+          # 5. Layouts
+          mkdir -p work/decompiled/res/layout
+          cp res/layout/activity_settings.xml work/decompiled/res/layout/activity_settings.xml
+          echo "✅ activity_settings.xml aplicado"
+          
+          # 6. Values (colors, strings, styles)
+          mkdir -p work/decompiled/res/values
+          cp res/values/colors.xml work/decompiled/res/values/colors.xml
+          cp res/values/strings.xml work/decompiled/res/values/strings.xml
+          cp res/values/styles.xml work/decompiled/res/values/styles.xml
+          echo "✅ Resources (colors, strings, styles) aplicados"
+          
+          # 7. Drawables XML
+          cp res/drawable/*.xml work/decompiled/res/drawable/
+          echo "✅ Drawables XML aplicados"
+          
+          # 8. Criar slot para libmobileglues.so
+          mkdir -p work/decompiled/lib/arm64-v8a
+          touch work/decompiled/lib/arm64-v8a/.gitkeep
+          echo "# Slot para libmobileglues.so - Insira manualmente" > work/decompiled/lib/arm64-v8a/.gitkeep
+          echo "✅ Slot para lib criado (VAZIO)"
+          
+          echo "✅ Todos os arquivos da interface Steampunk aplicados!"
+
+      # =========================================================================
+      # PASSO 10: Processar PNGs
+      # =========================================================================
+      - name: Process PNGs
+        if: steps.decompile.outputs.decompiled == 'true'
+        run: |
+          echo "🖼️  Processando PNGs..."
+          
+          # Verificar se PNGs existem
+          if [ -f "1782380310184.png" ]; then
+            echo "✅ Processando ícone..."
+            for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+              mkdir -p work/decompiled/res/drawable-$density
+              case $density in
+                mdpi) size="48x48" ;;
+                hdpi) size="72x72" ;;
+                xhdpi) size="96x96" ;;
+                xxhdpi) size="144x144" ;;
+                xxxhdpi) size="192x192" ;;
+              esac
+              convert 1782380310184.png -resize $size work/decompiled/res/drawable-$density/ic_launcher.png
+              cp work/decompiled/res/drawable-$density/ic_launcher.png work/decompiled/res/drawable-$density/ic_launcher_round.png
+            done
+            echo "✅ Ícone processado para todas as densidades"
+          else
+            echo "⚠️  PNG do ícone não encontrada, usando placeholder"
+            for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+              mkdir -p work/decompiled/res/drawable-$density
+              convert -size 48x48 xc:black -fill white -pointsize 20 -draw "text 10,25 'NVR'" work/decompiled/res/drawable-$density/ic_launcher.png
+              cp work/decompiled/res/drawable-$density/ic_launcher.png work/decompiled/res/drawable-$density/ic_launcher_round.png
+            done
+          fi
+          
+          if [ -f "1782380458552.png" ]; then
+            echo "✅ Processando interface..."
+            # Copiar para drawable-xxhdpi como background
+            cp 1782380458552.png work/decompiled/res/drawable-xxhdpi/bg_steampunk_texture.png
+          else
+            echo "⚠️  PNG da interface não encontrada"
+          fi
+
+      # =========================================================================
+      # PASSO 11: Recompilar a APK
+      # =========================================================================
+      - name: Recompile APK
+        if: steps.decompile.outputs.decompiled == 'true'
+        run: |
+          echo "🔨 Recompilando APK..."
+          
+          # Recompilar
+          apktool b work/decompiled -o work/build/NVR_unsigned.apk
+          
+          if [ ! -f "work/build/NVR_unsigned.apk" ]; then
+            echo "❌ Falha ao recompilar APK"
+            echo ""
+            echo "📄 Logs do apktool:"
+            cat work/build/apktool.log 2>/dev/null || echo "Nenhum log encontrado"
+            exit 1
+          fi
+          
+          echo "✅ APK recompilada: work/build/NVR_unsigned.apk"
+          ls -lh work/build/NVR_unsigned.apk
+
+      # =========================================================================
+      # PASSO 12: Alinhar com zipalign
+      # =========================================================================
+      - name: Align APK with zipalign
+        if: steps.decompile.outputs.decompiled == 'true'
+        run: |
+          echo "⚖️  Alinhando APK..."
+          
+          zipalign -v 4 work/build/NVR_unsigned.apk work/build/NVR_aligned.apk
+          
+          if [ ! -f "work/build/NVR_aligned.apk" ]; then
+            echo "❌ Falha ao alinhar APK"
+            exit 1
+          fi
+          
+          echo "✅ APK alinhada: work/build/NVR_aligned.apk"
+          ls -lh work/build/NVR_aligned.apk
+
+      # =========================================================================
+      # PASSO 13: Criar Keystore Debug
+      # =========================================================================
+      - name: Create debug keystore
+        if: steps.decompile.outputs.decompiled == 'true'
+        run: |
+          echo "🔑 Criando keystore debug..."
+          
+          keytool -genkey -v -keystore work/build/debug.keystore \
+            -alias debug \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass 123456 \
+            -keypass 123456 \
+            -dname "CN=Denocorp, OU=Nexus, O=Denocorp, L=Maputo, ST=Maputo, C=MZ"
+          
+          echo "✅ Keystore criada: work/build/debug.keystore"
+
+      # =========================================================================
+      # PASSO 14: Assinar a APK
+      # =========================================================================
+      - name: Sign APK with apksigner
+        if: steps.decompile.outputs.decompiled == 'true'
+        run: |
+          echo "🔏 Assinando APK..."
+          
+          apksigner sign \
+            --ks work/build/debug.keystore \
+            --ks-pass pass:123456 \
+            --ks-key-alias debug \
+            --key-pass pass:123456 \
+            --out work/output/NVR.apk \
+            work/build/NVR_aligned.apk
+          
+          # Verificar assinatura
+          apksigner verify --print-certs work/output/NVR.apk
+          
+          if [ ! -f "work/output/NVR.apk" ]; then
+            echo "❌ Falha ao assinar APK"
+            exit 1
+          fi
+          
+          echo "✅ APK assinada: work/output/NVR.apk"
+          ls -lh work/output/NVR.apk
+
+      # =========================================================================
+      # PASSO 15: Upload como Artifact
+      # =========================================================================
+      - name: Upload NVR.apk as artifact
+        if: steps.decompile.outputs.decompiled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: NVR_APK_FINAL
+          path: work/output/NVR.apk
+          retention-days: 30
+
+      # =========================================================================
+      # PASSO 16: Commit e Push da NVR.apk
+      # =========================================================================
+      - name: Commit and push NVR.apk
+        if: steps.decompile.outputs.decompiled == 'true'
+        run: |
+          echo "📤 Fazendo commit e push da NVR.apk..."
+          
+          # Configurar git
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          
+          # Copiar NVR.apk para o root do repositório
+          cp work/output/NVR.apk .
+          
+          # Adicionar e commitar
+          git add NVR.apk
+          git commit -m "🚀 NVR APK Build - Steampunk Interface (GitHub Actions)
+          
+          - Decompilada MobileGlRENDER_signed5.apk
+          - Analisado fluxo do ANGLE e libmobileglues.so
+          - Aplicada interface Steampunk
+          - Slot vazio para libmobileglues.so
+          - Assinada com keystore debug"
+          
+          git push origin nvr-steampunk-interface
+          
+          echo "✅ NVR.apk commitada e pushada para a branch"
+
+      # =========================================================================
+      # PASSO 17: Limpeza
+      # =========================================================================
+      - name: Cleanup temporary files
+        if: always()
+        run: |
+          echo "🧹 Limpando arquivos temporários..."
+          rm -rf work/
+          echo "✅ Limpeza concluída"
+
+      # =========================================================================
+      # PASSO 18: Resumo Final
+      # =========================================================================
+      - name: Final summary
+        if: always()
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "📊 RESUMO FINAL DO BUILD"
+          echo "=========================================="
+          echo ""
+          
+          if [ -f "work/output/NVR.apk" ]; then
+            FILE_SIZE=$(stat -c%s work/output/NVR.apk 2>/dev/null || echo "N/A")
+            echo "✅ SUCCESS!"
+            echo ""
+            echo "📦 NVR.apk gerada com sucesso!"
+            echo "   Tamanho: $FILE_SIZE bytes"
+            echo "   Local: work/output/NVR.apk"
+            echo ""
+            echo "🔗 Download do artifact:"
+            echo "   https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo ""
+            echo "📌 O que foi feito:"
+            echo "   ✅ Decompilada MobileGlRENDER_signed5.apk"
+            echo "   ✅ Analisado fluxo do ANGLE e libmobileglues.so"
+            echo "   ✅ Aplicada interface Steampunk"
+            echo "   ✅ Slot VAZIO para libmobileglues.so (como solicitado)"
+            echo "   ✅ Fluxo do ANGLE PRESERVADO (como solicitado)"
+            echo "   ✅ APK assinada com keystore debug"
+            echo ""
+            echo "⚠️  PRÓXIMOS PASSOS:"
+            echo "   1. Baixe a NVR.apk dos artifacts ou do repositório"
+            echo "   2. Extraia: unzip NVR.apk -d nvr_extracted"
+            echo "   3. Insira libmobileglues.so em: lib/arm64-v8a/"
+            echo "   4. Reempacote e reassine (ou use o script sign_apk.sh)"
+            echo ""
+          else
+            echo "❌ BUILD FALHOU"
+            echo ""
+            echo "Verifique os logs acima para identificar o erro."
+            echo ""
+          fi
+          
+          echo "=========================================="
