@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ======================================================================== -->
+    <!-- Steampunk Theme for NVR APK -->
+    <!-- ======================================================================== -->
+    
+    <!-- Base Theme -->
+    <style name="SteampunkTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Colors -->
+        <item name="colorPrimary">@color/steampunk_bronze</item>
+        <item name="colorPrimaryDark">@color/steampunk_bronze_dark</item>
+        <item name="colorAccent">@color/steampunk_blue</item>
+        <item name="colorBackground">@color/background_primary</item>
+        <item name="android:colorBackground">@color/background_primary</item>
+        
+        <!-- Text Colors -->
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:textColorTertiary">@color/text_tertiary</item>
+        
+        <!-- Window -->
+        <item name="android:windowBackground">@color/background_primary</item>
+        <item name="android:windowIsTranslucent">false</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">@color/background_secondary</item>
+        <item name="android:navigationBarColor">@color/background_secondary</item>
+        
+        <!-- Action Bar -->
+        <item name="actionBarStyle">@style/SteampunkActionBar</item>
+        <item name="android:actionBarStyle">@style/SteampunkActionBar</item>
+        
+        <!-- Button -->
+        <item name="buttonStyle">@style/SteampunkButton</item>
+        <item name="android:buttonStyle">@style/SteampunkButton</item>
+        
+        <!-- Checkbox -->
+        <item name="checkboxStyle">@style/SteampunkCheckbox</item>
+        <item name="android:checkboxStyle">@style/SteampunkCheckbox</item>
+        
+        <!-- Radio Button -->
+        <item name="radioButtonStyle">@style/SteampunkRadioButton</item>
+        <item name="android:radioButtonStyle">@style/SteampunkRadioButton</item>
+        
+        <!-- Switch -->
+        <item name="switchStyle">@style/SteampunkSwitch</item>
+        <item name="android:switchStyle">@style/SteampunkSwitch</item>
+        
+        <!-- SeekBar -->
+        <item name="seekBarStyle">@style/SteampunkSeekBar</item>
+        <item name="android:seekBarStyle">@style/SteampunkSeekBar</item>
+        
+        <!-- Spinner -->
+        <item name="spinnerStyle">@style/SteampunkSpinner</item>
+        <item name="android:spinnerStyle">@style/SteampunkSpinner</item>
+        
+        <!-- TextView -->
+        <item name="android:textViewStyle">@style/SteampunkTextView</item>
+        
+        <!-- EditText -->
+        <item name="android:editTextStyle">@style/SteampunkEditText</item>
+        
+        <!-- CardView -->
+        <item name="cardViewStyle">@style/SteampunkCardView</item>
+        
+        <!-- Alert Dialog -->
+        <item name="alertDialogTheme">@style/SteampunkAlertDialog</item>
+        <item name="android:alertDialogTheme">@style/SteampunkAlertDialog</item>
+        
+        <!-- Progress Bar -->
+        <item name="android:progressBarStyle">@style/SteampunkProgressBar</item>
+        <item name="android:progressBarStyleHorizontal">@style/SteampunkProgressBar.Horizontal</item>
+    </style>
+    
+    <!-- Theme without ActionBar -->
+    <style name="SteampunkTheme.NoActionBar" parent="SteampunkTheme">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+    
+    <!-- ======================================================================== -->
+    <!-- Action Bar -->
+    <!-- ======================================================================== -->
+    <style name="SteampunkActionBar" parent="Widget.MaterialComponents.Toolbar.Primary">
+        <item name="android:background">@color/surface_primary</item>
+        <item name="android:elevation">0dp</item>
+        <item name="titleTextColor">@color/text_primary</item>
+        <item name="subtitleTextColor">@color/text_secondary</item>
+        <item name="android:titleTextStyle">@style/SteampunkActionBar.TitleText</item>
+        <item name="android:subtitleTextStyle">@style/SteampunkActionBar.SubtitleText</item>
+    </style>
+    
+    <style name="SteampunkActionBar.TitleText" parent="TextAppearance.AppCompat.Widget.ActionBar.Title">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:fontFamily">serif</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    
+    <style name="SteampunkActionBar.SubtitleText" parent="TextAppearance.AppCompat.Widget.ActionBar.Subtitle">
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">serif</item>
+    </style>
+    
+    <!-- ======================================================================== -->
+    <!-- Text Views -->
+    <!-- ======================================================================== -->
+    <style name="SteampunkTextView" parent="Widget.MaterialComponents.TextView">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:fontFamily">serif</item>
+    </style>
+    
+    <style name="SteampunkTextView.Title" parent="SteampunkTextView">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/steampunk_gold</item>
+    </style>
+    
+    <style name="SteampunkTextView.Subtitle" parent="SteampunkTextView">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/steampunk_orange</item>
+    </style>
+    
+    <style name="SteampunkTextView.Body" parent="SteampunkTextView">
+        <item name="android:textSize">16sp</item>
+    </style>
+    
+    <style name="SteampunkTextView.Caption" parent="SteampunkTextView">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+    </style>
+    
+    <!-- ======================================================================== -->
+    <!-- EditText -->
+    <!-- ======================================================================== -->
+    <style name="SteampunkEditText" parent="Widget.MaterialComponents.TextInputEditText.OutlinedBox">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:hintTextColor">@color/text_secondary</item>
+        <item name="android:backgroundTint">@color/border_primary</item>
+        <item name="android:textSize">14sp</item>
+        <item name="boxBackgroundColor">@color/surface_primary</item>
+        <item name="boxStrokeColor">@color/border_primary</item>
+        <item name="boxStrokeWidth">2dp</item>
+        <item name="boxCornerRadiusTopStart">8dp</item>
+        <item name="boxCornerRadiusTopEnd">8dp</item>
+        <item name="boxCornerRadiusBottomStart">8dp</item>
+        <item name="boxCornerRadiusBottomEnd">8dp</item>
+    </style>
+    
+    <!-- ======================================================================== -->
+    <!-- Buttons -->
+    <!-- ======================================================================== -->
+    <style name="SteampunkButton" parent="Widget.MaterialComponents.Button">
+        <item name="android:backgroundTint">@color/button_background</item>
+        <item name="android:textColor">@color/button_text</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">serif</item>
+        <item name="android:textStyle">bold</item>
+        <item name="strokeColor">@color/button_border</item>
+        <item name="strokeWidth">2dp</item>
+        <item name="cornerRadius">8dp</item>
+        <item name="android:paddingHorizontal">16dp</item>
+        <item name="android:paddingVertical">8dp</item>
+    </style>
+    
+    <style name="SteampunkButton.Outlined" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="android:textColor">@color/button_text</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">serif</item>
+        <item name="strokeColor">@color/button_border</item>
+        <item name="strokeWidth">2dp</item>
+        <item name="cornerRadius">8dp</item>
+    </style>
+    
+    <!-- ======================================================================== -->
+    <!-- Switches (Lever Style) -->
+    <!-- ======================================================================== -->
+    <style name="SteampunkSwitch" parent="Widget.MaterialComponents.CompoundButton.Switch">
+        <item name="android:thumb">@drawable/custom_switch_thumb</item>
+        <item name="android:track">@drawable/custom_switch_track</item>
+        <item name="android:textOn">ON</item>
+        <item name="android:textOff">OFF</item>
+        <item name="android:showText">false</item>
+    </style>
+    
+    <!-- ======================================================================== -->
+    <!-- Checkbox -->
+    <!-- ======================================================================== -->
+    <style name="SteampunkCheckbox" parent="Widget.MaterialComponents.CompoundButton.CheckBox">
+        <item name="android:button">@drawable/custom_checkbox</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+    
+    <!-- ======================================================================== -->
+    <!-- Radio Button -->
+    <!-- ======================================================================== -->
+    <style name="SteampunkRadioButton" parent="Widget.MaterialComponents.CompoundButton.RadioButton">
+        <item name="android:button">@drawable/custom_radio_button</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+    
+    <!-- ======================================================================== -->
+    <!-- SeekBar -->
+    <!-- ======================================================================== -->
+    <style name="SteampunkSeekBar" parent="Widget.MaterialComponents.SeekBar">
+        <item name="android:progressDrawable">@drawable/custom_seekbar</item>
+        <item name="android:thumb">@drawable/custom_seekbar_thumb</item>
+        <item name="android:minHeight">24dp</item>
+        <item name="android:maxHeight">24dp</item>
+    </style>
+    
+    <!-- ======================================================================== -->
+    <!-- Spinner -->
+    <!-- ======================================================================== -->
+    <style name="SteampunkSpinner" parent="Widget.MaterialComponents.DropDownItem">
+        <item name="android:background">@drawable/bg_gear_dropdown</item>
+        <item name="android:paddingHorizontal">12dp</item>
+        <item name="android:paddingVertical">8dp</item>
+        <item name="android:popupBackground">@drawable/bg_gear_dropdown</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+    
+    <style name="SteampunkSpinner.Item" parent="Widget.MaterialComponents.TextView.DropDownItem">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:paddingHorizontal">16dp</item>
+        <item name="android:paddingVertical">8dp</item>
+    </style>
+    
+    <!-- ======================================================================== -->
+    <!-- CardView -->
+    <!-- ======================================================================== -->
+    <style name="SteampunkCardView" parent="Widget.MaterialComponents.CardView">
+        <item name="cardBackgroundColor">@color/card_background</item>
+        <item name="cardElevation">4dp</item>
+        <item name="cardCornerRadius">8dp</item>
+        <item name="cardUseCompatPadding">true</item>
+        <item name="cardPreventCornerOverlap">false</item>
+    </style>
+    
+    <!-- ======================================================================== -->
+    <!-- Alert Dialog -->
+    <!-- ======================================================================== -->
+    <style name="SteampunkAlertDialog" parent="Theme.MaterialComponents.Light.Dialog.Alert">
+        <item name="android:windowBackground">@color/dialog_background</item>
+        <item name="android:textColorPrimary">@color/dialog_title</item>
+        <item name="android:textColorSecondary">@color/dialog_message</item>
+        <item name="android:buttonBarButtonStyle">@style/SteampunkAlertDialog.Button</item>
+        <item name="android:windowMinWidthMajor">80%</item>
+        <item name="android:windowMinWidthMinor">80%</item>
+    </style>
+    
+    <style name="SteampunkAlertDialog.Button" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/steampunk_gold</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">serif</item>
+    </style>
+    
+    <!-- ======================================================================== -->
+    <!-- Progress Bar -->
+    <!-- ======================================================================== -->
+    <style name="SteampunkProgressBar" parent="Widget.MaterialComponents.ProgressBar">
+        <item name="android:indeterminateTint">@color/steampunk_bronze</item>
+        <item name="android:progressTint">@color/steampunk_bronze</item>
+        <item name="android:progressBackgroundTint">@color/surface_secondary</item>
+    </style>
+    
+    <style name="SteampunkProgressBar.Horizontal" parent="Widget.MaterialComponents.ProgressBar.Horizontal">
+        <item name="android:progressDrawable">@drawable/custom_progress_bar</item>
+        <item name="android:indeterminateDrawable">@drawable/custom_progress_bar_indeterminate</item>
+    </style>
+    
+    <!-- ======================================================================== -->
+    <!-- Tooltip -->
+    <!-- ======================================================================== -->
+    <style name="SteampunkTooltip" parent="Widget.MaterialComponents.Tooltip">
+        <item name="android:background">@drawable/tooltip_background</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+    
+    <!-- ======================================================================== -->
+    <!-- Divider -->
+    <!-- ======================================================================== -->
+    <style name="SteampunkDivider" parent="Widget.MaterialComponents.Divider">
+        <item name="android:background">@color/divider_color</item>
+        <item name="android:layout_height">1dp</item>
+    </style>
+</resources>
