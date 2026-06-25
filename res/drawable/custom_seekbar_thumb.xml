@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <size android:width="24dp" android:height="24dp"/>
+    <solid android:color="@color/seekbar_thumb"/>
+    <stroke 
+        android:width="2dp"
+        android:color="@color/steampunk_bronze" />
+    <gradient
+        android:startColor="@color/steampunk_gold"
+        android:endColor="@color/steampunk_bronze"
+        android:angle="45"
+        android:type="linear" />
+</shape>
