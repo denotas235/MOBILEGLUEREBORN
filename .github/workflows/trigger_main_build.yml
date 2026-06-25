@@ -1,0 +1,17 @@
+name: Trigger Main Build Workflow
+
+# Workflow para disparar o build principal
+on:
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger main workflow
+        run: |
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/decompile_analyze_and_build.yml/dispatches" \
+            -d '{"ref":"nvr-steampunk-interface"}'
