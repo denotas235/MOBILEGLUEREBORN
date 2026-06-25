@@ -1,0 +1,787 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_steampunk_texture"
+    android:padding="16dp"
+    tools:context=".SettingsActivity">
+
+    <!-- ======================================================================== -->
+    <!-- Main Panel (Bronze Frame) -->
+    <!-- ======================================================================== -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/main_panel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_bronze_frame"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <!-- ======================================================================== -->
+        <!-- Logo -->
+        <!-- ======================================================================== -->
+        <ImageView
+            android:id="@+id/logo_v"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:src="@drawable/ic_nexus_v_logo"
+            android:layout_marginTop="-40dp"
+            android:contentDescription="@string/app_name"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" 
+            tools:src="@drawable/ic_nexus_v_logo" />
+
+        <!-- ======================================================================== -->
+        <!-- Title -->
+        <!-- ======================================================================== -->
+        <TextView
+            android:id="@+id/txt_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_title"
+            android:textColor="@color/steampunk_gold"
+            android:textSize="18sp"
+            android:fontFamily="serif"
+            android:textStyle="bold"
+            android:layout_marginTop="45dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- ======================================================================== -->
+        <!-- Subtitle -->
+        <!-- ======================================================================== -->
+        <TextView
+            android:id="@+id/txt_subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_subtitle"
+            android:textColor="@color/steampunk_orange"
+            android:textSize="12sp"
+            android:fontFamily="serif"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/txt_title"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- ======================================================================== -->
+        <!-- Cache Panel (GLSL Cache Size) -->
+        <!-- ======================================================================== -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/panel_cache"
+            android:layout_width="0dp"
+            android:layout_height="100dp"
+            android:background="@drawable/bg_metallic_strip"
+            android:layout_marginTop="24dp"
+            android:layout_marginHorizontal="12dp"
+            app:layout_constraintTop_toBottomOf="@id/txt_subtitle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <!-- Dial (Cache Size Indicator) -->
+            <RelativeLayout
+                android:id="@+id/dial_container"
+                android:layout_width="70dp"
+                android:layout_height="70dp"
+                android:background="@drawable/ic_bronze_dial"
+                android:layout_marginStart="16dp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                tools:background="@drawable/ic_bronze_dial">
+                
+                <TextView
+                    android:id="@+id/dial_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="32"
+                    android:textColor="@color/steampunk_blue"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:layout_centerInParent="true" />
+            </RelativeLayout>
+
+            <!-- Cache Label -->
+            <TextView
+                android:id="@+id/lbl_cache"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/max_glsl_cache_size_label"
+                android:textColor="@color/steampunk_orange"
+                android:textStyle="bold"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="12dp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toEndOf="@id/dial_container" />
+
+            <!-- SeekBar for Cache Size -->
+            <SeekBar
+                android:id="@+id/sb_cache"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:progressDrawable="@drawable/custom_seekbar"
+                android:thumb="@drawable/custom_seekbar_thumb"
+                android:max="128"
+                android:progress="32"
+                android:layout_marginEnd="16dp"
+                app:layout_constraintTop_toBottomOf="@id/lbl_cache"
+                app:layout_constraintStart_toStartOf="@id/lbl_cache"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- Cache Value Text -->
+            <TextView
+                android:id="@+id/txt_cache_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="32 MB"
+                android:textColor="@color/steampunk_blue"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginEnd="16dp"
+                app:layout_constraintTop_toBottomOf="@id/sb_cache"
+                app:layout_constraintEnd_toEndOf="@id/sb_cache"
+                app:layout_constraintBottom_toBottomOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- ======================================================================== -->
+        <!-- Section: NVR Mode -->
+        <!-- ======================================================================== -->
+        <TextView
+            android:id="@+id/section_nvr_mode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/section_nvr_mode"
+            android:textColor="@color/steampunk_gold"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp"
+            android:layout_marginStart="8dp"
+            app:layout_constraintTop_toBottomOf="@id/panel_cache"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <LinearLayout
+            android:id="@+id/layout_nvr_mode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/section_nvr_mode">
+
+            <!-- ANGLE Mode -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/angle_mode_label"
+                    android:textColor="@color/steampunk_gold"
+                    android:layout_centerVertical="true" />
+                <Spinner
+                    android:id="@+id/spinner_angle_mode"
+                    android:layout_width="140dp"
+                    android:layout_height="38dp"
+                    android:background="@drawable/bg_gear_dropdown"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+
+            <!-- Custom OpenGL Version -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/custom_gl_version_label"
+                    android:textColor="@color/steampunk_gold"
+                    android:layout_centerVertical="true" />
+                <Spinner
+                    android:id="@+id/spinner_gl_version"
+                    android:layout_width="140dp"
+                    android:layout_height="38dp"
+                    android:background="@drawable/bg_gear_dropdown"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+
+            <!-- Hide MG Environment -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/hide_mg_env_label"
+                    android:textColor="@color/steampunk_gold"
+                    android:layout_centerVertical="true" />
+                <Spinner
+                    android:id="@+id/spinner_hide_mg_env"
+                    android:layout_width="140dp"
+                    android:layout_height="38dp"
+                    android:background="@drawable/bg_gear_dropdown"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+        </LinearLayout>
+
+        <!-- ======================================================================== -->
+        <!-- Section: Shader Cache -->
+        <!-- ======================================================================== -->
+        <TextView
+            android:id="@+id/section_shader_cache"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/section_shader_cache"
+            android:textColor="@color/steampunk_gold"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp"
+            android:layout_marginStart="8dp"
+            app:layout_constraintTop_toBottomOf="@id/layout_nvr_mode" />
+
+        <LinearLayout
+            android:id="@+id/layout_shader_cache"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/section_shader_cache">
+
+            <!-- Shader Binary Cache Toggle -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/shader_binary_cache_label"
+                    android:textColor="@color/steampunk_gold"
+                    android:layout_centerVertical="true" />
+                <Switch
+                    android:id="@+id/switch_shader_cache"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+
+            <!-- Cache Path -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/shader_binary_cache_path_label"
+                    android:textColor="@color/steampunk_gold"
+                    android:layout_centerVertical="true" />
+                <EditText
+                    android:id="@+id/et_cache_path"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_toEndOf="@id/textView"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="16dp"
+                    android:hint="@string/shader_binary_cache_path_hint"
+                    android:textColor="@color/text_primary"
+                    android:textSize="12sp" />
+            </RelativeLayout>
+        </LinearLayout>
+
+        <!-- ======================================================================== -->
+        <!-- Section: Mali Workaround -->
+        <!-- ======================================================================== -->
+        <TextView
+            android:id="@+id/section_mali_workaround"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/section_mali_workaround"
+            android:textColor="@color/steampunk_gold"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp"
+            android:layout_marginStart="8dp"
+            app:layout_constraintTop_toBottomOf="@id/layout_shader_cache" />
+
+        <LinearLayout
+            android:id="@+id/layout_mali_workaround"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/section_mali_workaround">
+
+            <!-- Framebuffer Fetch -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/framebuffer_fetch_label"
+                    android:textColor="@color/steampunk_gold"
+                    android:layout_centerVertical="true" />
+                <Switch
+                    android:id="@+id/switch_framebuffer_fetch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+
+            <!-- Phase 2 Lighting -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/phase2_lighting_label"
+                    android:textColor="@color/steampunk_gold"
+                    android:layout_centerVertical="true" />
+                <Switch
+                    android:id="@+id/switch_phase2_lighting"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+
+            <!-- ANGLE Depth Clear Fix -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/angle_depth_clear_fix_label"
+                    android:textColor="@color/steampunk_gold"
+                    android:layout_centerVertical="true" />
+                <Spinner
+                    android:id="@+id/spinner_angle_depth_clear_fix"
+                    android:layout_width="140dp"
+                    android:layout_height="38dp"
+                    android:background="@drawable/bg_gear_dropdown"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+        </LinearLayout>
+
+        <!-- ======================================================================== -->
+        <!-- Section: Debug Log -->
+        <!-- ======================================================================== -->
+        <TextView
+            android:id="@+id/section_debug_log"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/section_debug_log"
+            android:textColor="@color/steampunk_gold"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp"
+            android:layout_marginStart="8dp"
+            app:layout_constraintTop_toBottomOf="@id/layout_mali_workaround" />
+
+        <LinearLayout
+            android:id="@+id/layout_debug_log"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/section_debug_log">
+
+            <!-- Debug Log Level -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/debug_log_level_label"
+                    android:textColor="@color/steampunk_gold"
+                    android:layout_centerVertical="true" />
+                <Spinner
+                    android:id="@+id/spinner_debug_log_level"
+                    android:layout_width="140dp"
+                    android:layout_height="38dp"
+                    android:background="@drawable/bg_gear_dropdown"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+
+            <!-- Timer Query -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/timer_query_label"
+                    android:textColor="@color/steampunk_gold"
+                    android:layout_centerVertical="true" />
+                <Switch
+                    android:id="@+id/switch_timer_query"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+        </LinearLayout>
+
+        <!-- ======================================================================== -->
+        <!-- Section: Extensions -->
+        <!-- ======================================================================== -->
+        <TextView
+            android:id="@+id/section_extensions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/section_extensions"
+            android:textColor="@color/steampunk_gold"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp"
+            android:layout_marginStart="8dp"
+            app:layout_constraintTop_toBottomOf="@id/layout_debug_log" />
+
+        <LinearLayout
+            android:id="@+id/layout_extensions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/section_extensions">
+
+            <!-- ARB Compute Shader -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/ext_compute_shader_label"
+                    android:textColor="@color/steampunk_gold"
+                    android:layout_centerVertical="true" />
+                <Switch
+                    android:id="@+id/switch_compute_shader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+
+            <!-- Direct State Access -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/ext_direct_state_access_label"
+                    android:textColor="@color/steampunk_gold"
+                    android:layout_centerVertical="true" />
+                <Switch
+                    android:id="@+id/switch_direct_state_access"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+        </LinearLayout>
+
+        <!-- ======================================================================== -->
+        <!-- Section: MultiDraw Emulation -->
+        <!-- ======================================================================== -->
+        <TextView
+            android:id="@+id/section_multidraw"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/section_multidraw"
+            android:textColor="@color/steampunk_gold"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp"
+            android:layout_marginStart="8dp"
+            app:layout_constraintTop_toBottomOf="@id/layout_extensions" />
+
+        <LinearLayout
+            android:id="@+id/layout_multidraw"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/section_multidraw">
+
+            <!-- MultiDraw Mode -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/multidraw_mode_label"
+                    android:textColor="@color/steampunk_gold"
+                    android:layout_centerVertical="true" />
+                <Spinner
+                    android:id="@+id/spinner_multidraw_mode"
+                    android:layout_width="140dp"
+                    android:layout_height="38dp"
+                    android:background="@drawable/bg_gear_dropdown"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+        </LinearLayout>
+
+        <!-- ======================================================================== -->
+        <!-- Section: GPU Optimizations -->
+        <!-- ======================================================================== -->
+        <TextView
+            android:id="@+id/section_gpu_optimizations"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/section_gpu_optimizations"
+            android:textColor="@color/steampunk_gold"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp"
+            android:layout_marginStart="8dp"
+            app:layout_constraintTop_toBottomOf="@id/layout_multidraw" />
+
+        <LinearLayout
+            android:id="@+id/layout_gpu_optimizations"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/section_gpu_optimizations">
+
+            <!-- Anisotropic Filtering -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/anisotropic_filtering_label"
+                    android:textColor="@color/steampunk_gold"
+                    android:layout_centerVertical="true" />
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:gravity="center">
+                    <Switch
+                        android:id="@+id/switch_anisotropic_filtering"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                    <TextView
+                        android:id="@+id/txt_aniso_level"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="8x"
+                        android:textColor="@color/steampunk_blue"
+                        android:textSize="12sp"
+                        android:layout_marginStart="8dp" />
+                </LinearLayout>
+            </RelativeLayout>
+
+            <!-- UBO/SSBO Conversion -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/ubo_ssbo_conversion_label"
+                    android:textColor="@color/steampunk_gold"
+                    android:layout_centerVertical="true" />
+                <Switch
+                    android:id="@+id/switch_ubo_ssbo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+
+            <!-- Extension Scanner -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/extension_scanner_label"
+                    android:textColor="@color/steampunk_gold"
+                    android:layout_centerVertical="true" />
+                <Switch
+                    android:id="@+id/switch_extension_scanner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+
+            <!-- Shader Binary Cache (Duplicate for visibility) -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/shader_binary_cache_label"
+                    android:textColor="@color/steampunk_gold"
+                    android:layout_centerVertical="true" />
+                <Switch
+                    android:id="@+id/switch_shader_binary_cache"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+        </LinearLayout>
+
+        <!-- ======================================================================== -->
+        <!-- Switches Description -->
+        <!-- ======================================================================== -->
+        <TextView
+            android:id="@+id/lbl_switches_desc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/switches_desc"
+            android:textColor="@color/steampunk_gold"
+            android:textSize="11sp"
+            android:gravity="center"
+            android:layout_marginTop="24dp"
+            app:layout_constraintTop_toBottomOf="@id/layout_gpu_optimizations" />
+
+        <!-- ======================================================================== -->
+        <!-- Lever Switches (Custom Toggle Buttons) -->
+        <!-- ======================================================================== -->
+        <LinearLayout
+            android:id="@+id/layout_switches"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@id/lbl_switches_desc">
+
+            <ImageView
+                android:id="@+id/lever_switch_1"
+                android:layout_width="65dp"
+                android:layout_height="65dp"
+                android:src="@drawable/ic_lever_switch_on"
+                android:layout_marginHorizontal="8dp"
+                android:contentDescription="Toggle 1" />
+            
+            <ImageView
+                android:id="@+id/lever_switch_2"
+                android:layout_width="65dp"
+                android:layout_height="65dp"
+                android:src="@drawable/ic_lever_switch_off"
+                android:layout_marginHorizontal="8dp"
+                android:contentDescription="Toggle 2" />
+            
+            <ImageView
+                android:id="@+id/lever_switch_3"
+                android:layout_width="65dp"
+                android:layout_height="65dp"
+                android:src="@drawable/ic_lever_switch_on"
+                android:layout_marginHorizontal="8dp"
+                android:contentDescription="Toggle 3" />
+            
+            <ImageView
+                android:id="@+id/lever_switch_4"
+                android:layout_width="65dp"
+                android:layout_height="65dp"
+                android:src="@drawable/ic_lever_switch_on"
+                android:layout_marginHorizontal="8dp"
+                android:contentDescription="Toggle 4" />
+        </LinearLayout>
+
+        <!-- ======================================================================== -->
+        <!-- Footer -->
+        <!-- ======================================================================== -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:paddingHorizontal="16dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginBottom="8dp">
+
+            <!-- Powered By -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/powered_by"
+                android:textColor="@color/steampunk_blue"
+                android:textSize="10sp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true" />
+
+            <!-- Navigation Buttons -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:orientation="horizontal">
+                <ImageButton
+                    android:id="@+id/btn_back"
+                    android:layout_width="32dp"
+                    android:layout_height="24dp"
+                    android:background="@drawable/btn_arrow_back"
+                    android:layout_marginEnd="4dp"
+                    android:contentDescription="Back" />
+                <ImageButton
+                    android:id="@+id/btn_home"
+                    android:layout_width="32dp"
+                    android:layout_height="24dp"
+                    android:background="@drawable/btn_home"
+                    android:layout_marginEnd="4dp"
+                    android:contentDescription="Home" />
+                <ImageButton
+                    android:id="@+id/btn_menu"
+                    android:layout_width="32dp"
+                    android:layout_height="24dp"
+                    android:background="@drawable/btn_menu"
+                    android:contentDescription="Menu" />
+            </LinearLayout>
+
+            <!-- Speed Rating -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/speed_rating"
+                android:textColor="@color/steampunk_blue"
+                android:textSize="10sp"
+                android:gravity="end"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true" />
+        </RelativeLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
