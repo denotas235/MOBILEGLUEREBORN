@@ -64,6 +64,16 @@ void proc_init() {
 
     init_settings();
 
+    // ── NVR: Vulkan-passthrough mode ─────────────────────────────────────────
+    // When ANGLE is enabled, VulkanMod owns the GPU — no EGL/GLES must be created.
+    // Only the GLSL→SPIRV compiler (glslang) is active via nvr_compile_glsl_to_spirv().
+    if (global_settings.angle == AngleMode::Enabled) {
+        LOG_V("[NVR] Vulkan-passthrough active — EGL/GLES SKIPPED. GPU owned by VulkanMod.");
+        g_initialized = 1;
+        return;
+    }
+    // ── Standard OpenGL ES path ──────────────────────────────────────────────
+
     load_libs();
     init_target_egl();
     init_target_gles();
