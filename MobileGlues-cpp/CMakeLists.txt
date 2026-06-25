@@ -153,6 +153,9 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
     gl/glsl/glsl_for_es.cpp
     gl/glsl/cache.cpp
 
+    # NVR: NEXUS_VK_RENDER — Vulkan bridge
+    gl/nexus_vk_bridge.cpp
+
     # ── Extensions wrappers ────────────────────────────────
     gl/ExtWrappers/DSAWrapper.cpp
     gl/ExtWrappers/MultiBindWrapper.cpp
