@@ -1,0 +1,53 @@
+name: Execute NVR APK Build Now
+
+# =============================================================================
+# Workflow para executar o build IMMEDIATAMENTE
+# =============================================================================
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Confirme que quer executar o build completo (sim/nao)'
+        required: true
+        default: 'sim'
+
+jobs:
+  trigger_build:
+    name: Trigger Build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: nvr-steampunk-interface
+
+      - name: Trigger main workflow
+        if: github.event.inputs.confirm == 'sim'
+        run: |
+          echo "⏳ Iniciando workflow principal..."
+          echo ""
+          echo "O workflow 'Decompile, Analyze, and Build NVR APK' será executado."
+          echo "Isso pode demorar 10-15 minutos."
+          echo ""
+          echo "🔗 Acompanhe em: https://github.com/${{ github.repository }}/actions"
+          
+          # Disparar o workflow principal
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/decompile_analyze_and_build.yml/dispatches \
+            -d '{"ref":"nvr-steampunk-interface"}'
+          
+          echo "✅ Workflow principal disparado!"
+          echo ""
+          echo "Aguardando execução..."
+          sleep 5
+          echo "Verifique: https://github.com/${{ github.repository }}/actions"
+        
+      - name: Cancel if not confirmed
+        if: github.event.inputs.confirm != 'sim'
+        run: |
+          echo "❌ Build cancelado - confirmação necessária"
+          exit 1
