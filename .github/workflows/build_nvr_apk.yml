@@ -60,24 +60,39 @@ jobs:
             openjdk-17-jdk-headless
 
       # =========================================================================
-      # Passo 4: Baixar e instalar apktool
+      # Passo 4: Baixar e instalar apktool (versão 3.0.2)
       # =========================================================================
       - name: Download and install apktool
         run: |
-          # Baixar apktool script do repositório oficial
-          wget https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool -O /usr/local/bin/apktool
+          echo "📥 Baixando apktool..."
           
-          # Baixar apktool.jar de uma fonte alternativa confiável
-          # Usando a releases do GitHub em vez do Bitbucket que está com 404
-          wget https://github.com/iBotPeaches/Apktool/releases/download/v2.9.0/apktool_2.9.0.jar -O /usr/local/bin/apktool.jar 2>/dev/null || \
-          wget https://github.com/iBotPeaches/Apktool/releases/download/v2.8.1/apktool_2.8.1.jar -O /usr/local/bin/apktool.jar 2>/dev/null || \
-          wget https://github.com/iBotPeaches/Apktool/releases/download/v2.8.0/apktool_2.8.0.jar -O /usr/local/bin/apktool.jar
+          # Baixar apktool script do repositório oficial
+          wget -q https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool -O /usr/local/bin/apktool
+          
+          # Tentar v3.0.2 primeiro (versão mais recente)
+          echo "🔍 Tentando Apktool v3.0.2..."
+          wget -q https://github.com/iBotPeaches/Apktool/releases/download/v3.0.2/apktool_3.0.2.jar -O /usr/local/bin/apktool.jar && echo "✅ v3.0.2 baixado com sucesso" || {
+            echo "⚠️ v3.0.2 não disponível, tentando v2.9.0..."
+            wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.9.0/apktool_2.9.0.jar -O /usr/local/bin/apktool.jar && echo "✅ v2.9.0 baixado com sucesso" || {
+              echo "⚠️ v2.9.0 não disponível, tentando v2.8.1..."
+              wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.8.1/apktool_2.8.1.jar -O /usr/local/bin/apktool.jar && echo "✅ v2.8.1 baixado com sucesso" || {
+                echo "❌ Todas as versões de download falharam"
+                exit 1
+              }
+            }
+          }
           
           # Dar permissão
           chmod +x /usr/local/bin/apktool
           
-          # Verificar
-          apktool --version
+          # Verificar instalação
+          if [ -f /usr/local/bin/apktool.jar ]; then
+            echo "✅ Apktool instalado com sucesso"
+            apktool --version
+          else
+            echo "❌ Falha ao instalar apktool.jar"
+            exit 1
+          fi
 
       # =========================================================================
       # Passo 5: Baixar apksigner (se não estiver no PATH)
