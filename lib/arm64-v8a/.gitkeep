@@ -1,0 +1,3 @@
+# This directory is reserved for libmobileglues.so
+# Place the compiled ARM64-V8A .so file here
+# File: libmobileglues.so
