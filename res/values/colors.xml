@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Steampunk Color Palette -->
+    
+    <!-- Primary Colors -->
+    <color name="steampunk_brown_dark">#2A221B</color>
+    <color name="steampunk_brown_medium">#3A2E28</color>
+    <color name="steampunk_brown_light">#5A4A42</color>
+    
+    <!-- Metallic Colors -->
+    <color name="steampunk_bronze">#A98467</color>
+    <color name="steampunk_bronze_light">#C9A487</color>
+    <color name="steampunk_bronze_dark">#896447</color>
+    <color name="steampunk_gold">#E5C298</color>
+    <color name="steampunk_gold_light">#F5D2A8</color>
+    
+    <!-- Accent Colors -->
+    <color name="steampunk_blue">#5CE1E6</color>
+    <color name="steampunk_blue_dark">#4BC0D6</color>
+    <color name="steampunk_orange">#D4A373</color>
+    <color name="steampunk_orange_dark">#B48353</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary">#E5C298</color>
+    <color name="text_secondary">#D4A373</color>
+    <color name="text_tertiary">#5CE1E6</color>
+    <color name="text_disabled">#5A4A42</color>
+    
+    <!-- Background Colors -->
+    <color name="background_primary">#1A120B</color>
+    <color name="background_secondary">#2A221B</color>
+    <color name="background_tertiary">#3A2E28</color>
+    
+    <!-- Surface Colors -->
+    <color name="surface_primary">#2A221B</color>
+    <color name="surface_secondary">#3A2E28</color>
+    
+    <!-- Border Colors -->
+    <color name="border_primary">#A98467</color>
+    <color name="border_secondary">#896447</color>
+    
+    <!-- Status Colors -->
+    <color name="status_active">#5CE1E6</color>
+    <color name="status_inactive">#5A4A42</color>
+    <color name="status_warning">#D4A373</color>
+    <color name="status_error">#E57373</color>
+    
+    <!-- Switch Colors -->
+    <color name="switch_on">#5CE1E6</color>
+    <color name="switch_off">#5A4A42</color>
+    <color name="switch_thumb">#E5C298</color>
+    
+    <!-- SeekBar Colors -->
+    <color name="seekbar_track">#3A2E28</color>
+    <color name="seekbar_progress">#A98467</color>
+    <color name="seekbar_thumb">#E5C298</color>
+    
+    <!-- Button Colors -->
+    <color name="button_background">#2A221B</color>
+    <color name="button_text">#E5C298</color>
+    <color name="button_border">#A98467</color>
+    
+    <!-- Dialog Colors -->
+    <color name="dialog_background">#2A221B</color>
+    <color name="dialog_title">#E5C298</color>
+    <color name="dialog_message">#D4A373</color>
+    
+    <!-- Card Colors -->
+    <color name="card_background">#2A221B</color>
+    <color name="card_border">#A98467</color>
+    
+    <!-- Divider Colors -->
+    <color name="divider_color">#A98467</color>
+    
+    <!-- App Colors -->
+    <color name="colorPrimary">#A98467</color>
+    <color name="colorPrimaryDark">#896447</color>
+    <color name="colorAccent">#5CE1E6</color>
+    <color name="colorBackground">#1A120B</color>
+    <color name="colorTextPrimary">#E5C298</color>
+    <color name="colorTextSecondary">#D4A373</color>
+</resources>
