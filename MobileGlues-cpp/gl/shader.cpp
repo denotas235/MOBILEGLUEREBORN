@@ -16,6 +16,7 @@
 #include "glsl/glsl_for_es.h"
 #include "../config/settings.h"
 #include "FSR1/FSR1.h"
+#include "nexus_vk_bridge.h"
 
 #define DEBUG 0
 
@@ -75,6 +76,15 @@ void glShaderSource(GLuint shader, GLsizei count, const GLchar* const* string, c
     }
 
     bool is_sampler_buffer_emulated = hardware->emulate_texture_buffer && check_if_sampler_buffer_used(glsl_src);
+
+    // ── NVR: Vulkan-passthrough — glShaderSource is a no-op ─────────────────
+    // VulkanMod compiles shaders via nvr_compile_glsl_to_spirv() (JNI).
+    // Forwarding to the GLES driver here would conflict with the Vulkan context.
+    if (nvr_is_active()) {
+        LOG_D("[NVR] glShaderSource(%u) skipped — VulkanMod owns shader pipeline.", shader);
+        return;
+    }
+    // ── Standard GLSL→GLES path ───────────────────────────────────────────
 
     if (is_direct_shader(glsl_src.c_str())) {
         LOG_D("[INFO] [Shader] Direct shader source: ")
