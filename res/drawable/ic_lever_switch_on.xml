@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background (metal base) -->
+    <item>
+        <shape android:shape="rectangle">
+            <size android:width="65dp" android:height="65dp" />
+            <corners android:radius="8dp" />
+            <solid android:color="#3A2E28" />
+            <stroke android:width="2dp" android:color="@color/steampunk_bronze" />
+        </shape>
+    </item>
+    
+    <!-- Lever (ON position - right) -->
+    <item android:gravity="end|center_vertical" android:right="8dp">
+        <layer-list>
+            <!-- Lever base -->
+            <item>
+                <shape android:shape="rectangle">
+                    <size android:width="30dp" android:height="12dp" />
+                    <corners android:radius="6dp" />
+                    <solid android:color="@color/steampunk_bronze" />
+                    <stroke android:width="1dp" android:color="@color/steampunk_gold" />
+                </shape>
+            </item>
+            <!-- Lever handle -->
+            <item android:gravity="end">
+                <shape android:shape="oval">
+                    <size android:width="16dp" android:height="16dp" />
+                    <solid android:color="@color/steampunk_gold" />
+                    <stroke android:width="1dp" android:color="@color/steampunk_bronze" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+    
+    <!-- ON text -->
+    <item android:gravity="start|center_vertical" android:left="8dp">
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="24dp"
+            android:height="16dp"
+            android:viewportWidth="24"
+            android:viewportHeight="16">
+            <path
+                android:fillColor="@color/steampunk_blue"
+                android:pathData="M12,2 C6.48,2 2,6.48 2,12 C2,17.52 6.48,22 12,22 C17.52,22 22,17.52 22,12 C22,6.48 17.52,2 12,2 Z M18,12.5 C18,14.43 16.43,16 14.5,16 C12.57,16 11,14.43 11,12.5 C11,10.57 12.57,9 14.5,9 C16.43,9 18,10.57 18,12.5 Z" />
+        </vector>
+    </item>
+</layer-list>
