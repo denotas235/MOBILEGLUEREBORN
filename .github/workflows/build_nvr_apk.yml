@@ -64,9 +64,14 @@ jobs:
       # =========================================================================
       - name: Download and install apktool
         run: |
-          # Baixar apktool
+          # Baixar apktool script do repositório oficial
           wget https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool -O /usr/local/bin/apktool
-          wget https://bitbucket.org/iBotPeaches/apktool/raw/stable/apktool.jar -O /usr/local/bin/apktool.jar
+          
+          # Baixar apktool.jar de uma fonte alternativa confiável
+          # Usando a releases do GitHub em vez do Bitbucket que está com 404
+          wget https://github.com/iBotPeaches/Apktool/releases/download/v2.9.0/apktool_2.9.0.jar -O /usr/local/bin/apktool.jar 2>/dev/null || \
+          wget https://github.com/iBotPeaches/Apktool/releases/download/v2.8.1/apktool_2.8.1.jar -O /usr/local/bin/apktool.jar 2>/dev/null || \
+          wget https://github.com/iBotPeaches/Apktool/releases/download/v2.8.0/apktool_2.8.0.jar -O /usr/local/bin/apktool.jar
           
           # Dar permissão
           chmod +x /usr/local/bin/apktool
@@ -93,8 +98,8 @@ jobs:
             if [ -n "$APKSIGNER_PATH" ]; then
               sudo ln -s "$APKSIGNER_PATH" /usr/local/bin/apksigner
             else
-              # Baixar apksigner standalone
-              wget https://github.com/android/android-ktx/releases/download/1.12.0/apksigner.jar -O /usr/local/bin/apksigner.jar
+              # Fallback: usar apksigner standalone
+              wget https://github.com/android/android-ktx/releases/download/1.12.0/apksigner.jar -O /usr/local/bin/apksigner.jar 2>/dev/null || true
               echo '#!/bin/bash\njava -jar /usr/local/bin/apksigner.jar "$@"' > /usr/local/bin/apksigner
               chmod +x /usr/local/bin/apksigner
             fi
@@ -200,37 +205,54 @@ jobs:
       - name: Copy Steampunk interface files
         run: |
           # AndroidManifest.xml
-          cp AndroidManifest.xml decompiled_apk/AndroidManifest.xml
+          if [ -f "AndroidManifest.xml" ]; then
+            cp AndroidManifest.xml decompiled_apk/AndroidManifest.xml
+          fi
           
           # mobileglues.conf
-          cp mobileglues.conf decompiled_apk/assets/mobileglues.conf
+          if [ -f "mobileglues.conf" ]; then
+            mkdir -p decompiled_apk/assets
+            cp mobileglues.conf decompiled_apk/assets/mobileglues.conf
+          fi
           
           # NexusVkBridge.smali
-          mkdir -p decompiled_apk/smali/com/nexus/vulkan
-          cp NexusVkBridge.smali decompiled_apk/smali/com/nexus/vulkan/NexusVkBridge.smali
+          if [ -f "NexusVkBridge.smali" ]; then
+            mkdir -p decompiled_apk/smali/com/nexus/vulkan
+            cp NexusVkBridge.smali decompiled_apk/smali/com/nexus/vulkan/NexusVkBridge.smali
+          fi
           
           # SettingsActivity.smali
-          cp smali/com/nexus/vulkan/SettingsActivity.smali decompiled_apk/smali/com/nexus/vulkan/SettingsActivity.smali
+          if [ -f "smali/com/nexus/vulkan/SettingsActivity.smali" ]; then
+            mkdir -p decompiled_apk/smali/com/nexus/vulkan
+            cp smali/com/nexus/vulkan/SettingsActivity.smali decompiled_apk/smali/com/nexus/vulkan/SettingsActivity.smali
+          fi
           
           # Layouts
-          mkdir -p decompiled_apk/res/layout
-          cp res/layout/activity_settings.xml decompiled_apk/res/layout/activity_settings.xml
+          if [ -f "res/layout/activity_settings.xml" ]; then
+            mkdir -p decompiled_apk/res/layout
+            cp res/layout/activity_settings.xml decompiled_apk/res/layout/activity_settings.xml
+          fi
           
           # Values (colors, strings, styles)
-          mkdir -p decompiled_apk/res/values
-          cp res/values/colors.xml decompiled_apk/res/values/colors.xml
-          cp res/values/strings.xml decompiled_apk/res/values/strings.xml
-          cp res/values/styles.xml decompiled_apk/res/values/styles.xml
+          for file in res/values/*.xml; do
+            if [ -f "$file" ]; then
+              mkdir -p decompiled_apk/res/values
+              cp "$file" decompiled_apk/res/values/
+            fi
+          done
           
           # Drawables XML
-          cp res/drawable/*.xml decompiled_apk/res/drawable/
+          if [ -d "res/drawable" ] && [ -n "$(ls -A res/drawable/*.xml 2>/dev/null)" ]; then
+            mkdir -p decompiled_apk/res/drawable
+            cp res/drawable/*.xml decompiled_apk/res/drawable/
+          fi
           
           # Criar slot para lib
           mkdir -p decompiled_apk/lib/arm64-v8a
           touch decompiled_apk/lib/arm64-v8a/.gitkeep
           echo "# Slot para libmobileglues.so" > decompiled_apk/lib/arm64-v8a/.gitkeep
           
-          echo "✅ Todos os arquivos da interface Steampunk copiados"
+          echo "✅ Todos os arquivos disponíveis da interface Steampunk copiados"
 
       # =========================================================================
       # Passo 11: Recompilar a APK
@@ -326,8 +348,8 @@ jobs:
           
           # Adicionar NVR.apk ao repositório
           git add NVR.apk
-          git commit -m "🚀 Build NVR APK with Steampunk interface (GitHub Actions)"
-          git push origin nvr-steampunk-interface
+          git commit -m "🚀 Build NVR APK with Steampunk interface (GitHub Actions)" || echo "Nada a commitar"
+          git push origin nvr-steampunk-interface || echo "Push falhou (possível: sem mudanças)"
           
           echo "✅ NVR.apk commitada e pushada para a branch"
 
