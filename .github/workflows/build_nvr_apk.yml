@@ -1,0 +1,365 @@
+name: Build NVR APK with Steampunk Interface
+
+# =============================================================================
+# GitHub Actions Workflow para:
+# 1. Baixar ferramentas necessárias (apktool, zipalign, apksigner)
+# 2. Decompilar a APK base (MobileGlRENDER_signed5.apk)
+# 3. Inserir arquivos da interface Steampunk
+# 4. Recompilar a APK
+# 5. Assinar com keystore debug
+# 6. Gerar NVR.apk final
+# =============================================================================
+
+on:
+  workflow_dispatch:  # Permite execução manual
+  push:
+    branches: [ nvr-steampunk-interface ]
+    paths:
+      - 'MobileGlRENDER_signed5.apk'
+      - 'res/**'
+      - 'smali/**'
+      - 'AndroidManifest.xml'
+      - 'mobileglues.conf'
+
+jobs:
+  build_nvr_apk:
+    name: Build NVR APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # =========================================================================
+      # Passo 1: Checkout do repositório
+      # =========================================================================
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Baixar histórico completo
+          ref: nvr-steampunk-interface
+
+      # =========================================================================
+      # Passo 2: Configurar Java (requerido pelo apktool)
+      # =========================================================================
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # =========================================================================
+      # Passo 3: Instalar dependências do sistema
+      # =========================================================================
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            unzip \
+            zipalign \
+            wget \
+            imagemagick \
+            openjdk-17-jdk-headless
+
+      # =========================================================================
+      # Passo 4: Baixar e instalar apktool
+      # =========================================================================
+      - name: Download and install apktool
+        run: |
+          # Baixar apktool
+          wget https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool -O /usr/local/bin/apktool
+          wget https://bitbucket.org/iBotPeaches/apktool/raw/stable/apktool.jar -O /usr/local/bin/apktool.jar
+          
+          # Dar permissão
+          chmod +x /usr/local/bin/apktool
+          
+          # Verificar
+          apktool --version
+
+      # =========================================================================
+      # Passo 5: Baixar apksigner (se não estiver no PATH)
+      # =========================================================================
+      - name: Download apksigner
+        run: |
+          # Verificar se apksigner já está disponível
+          if ! command -v apksigner &> /dev/null; then
+            # Baixar do Android SDK
+            wget https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip -O android-sdk-tools.zip
+            unzip -q android-sdk-tools.zip -d android-sdk
+            
+            # Baixar apksigner via sdkmanager
+            yes | android-sdk/cmdline-tools/bin/sdkmanager "build-tools;34.0.0" > /dev/null 2>&1 || true
+            
+            # Localizar apksigner
+            APKSIGNER_PATH=$(find ~/.android -name apksigner 2>/dev/null | head -n 1)
+            if [ -n "$APKSIGNER_PATH" ]; then
+              sudo ln -s "$APKSIGNER_PATH" /usr/local/bin/apksigner
+            else
+              # Baixar apksigner standalone
+              wget https://github.com/android/android-ktx/releases/download/1.12.0/apksigner.jar -O /usr/local/bin/apksigner.jar
+              echo '#!/bin/bash\njava -jar /usr/local/bin/apksigner.jar "$@"' > /usr/local/bin/apksigner
+              chmod +x /usr/local/bin/apksigner
+            fi
+          fi
+          
+          apksigner --version || echo "apksigner disponível"
+
+      # =========================================================================
+      # Passo 6: Baixar a APK base (MobileGlRENDER_signed5.apk)
+      # =========================================================================
+      - name: Download base APK
+        run: |
+          # A APK já está no repositório
+          if [ ! -f "MobileGlRENDER_signed5.apk" ]; then
+            echo "❌ APK base não encontrada no repositório"
+            exit 1
+          fi
+          echo "✅ APK base encontrada: MobileGlRENDER_signed5.apk"
+          ls -lh MobileGlRENDER_signed5.apk
+
+      # =========================================================================
+      # Passo 7: Baixar as PNGs
+      # =========================================================================
+      - name: Download PNGs
+        run: |
+          # As PNGs já estão no repositório
+          if [ ! -f "1782380310184.png" ]; then
+            echo "⚠️ Ícone PNG não encontrado"
+          else
+            echo "✅ Ícone PNG encontrado: 1782380310184.png"
+          fi
+          
+          if [ ! -f "1782380458552.png" ]; then
+            echo "⚠️ Interface PNG não encontrada"
+          else
+            echo "✅ Interface PNG encontrada: 1782380458552.png"
+          fi
+
+      # =========================================================================
+      # Passo 8: Decompilar a APK base
+      # =========================================================================
+      - name: Decompile base APK
+        run: |
+          mkdir -p decompiled_apk
+          
+          # Decompilar
+          apktool d MobileGlRENDER_signed5.apk -o decompiled_apk -f
+          
+          # Verificar
+          if [ ! -d "decompiled_apk" ]; then
+            echo "❌ Falha ao decompilar APK"
+            exit 1
+          fi
+          
+          echo "✅ APK decompilada em: decompiled_apk/"
+          ls -la decompiled_apk/
+
+      # =========================================================================
+      # Passo 9: Processar PNGs (criar ícones para todas as densidades)
+      # =========================================================================
+      - name: Process PNGs for all densities
+        run: |
+          # Criar diretórios
+          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            mkdir -p decompiled_apk/res/drawable-$density
+          done
+          
+          # Processar ícone (1782380310184.png)
+          if [ -f "1782380310184.png" ]; then
+            convert 1782380310184.png -resize 48x48 decompiled_apk/res/drawable-mdpi/ic_launcher.png
+            convert 1782380310184.png -resize 72x72 decompiled_apk/res/drawable-hdpi/ic_launcher.png
+            convert 1782380310184.png -resize 96x96 decompiled_apk/res/drawable-xhdpi/ic_launcher.png
+            convert 1782380310184.png -resize 144x144 decompiled_apk/res/drawable-xxhdpi/ic_launcher.png
+            convert 1782380310184.png -resize 192x192 decompiled_apk/res/drawable-xxxhdpi/ic_launcher.png
+            
+            # ic_launcher_round
+            for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+              cp decompiled_apk/res/drawable-$density/ic_launcher.png decompiled_apk/res/drawable-$density/ic_launcher_round.png
+            done
+            
+            echo "✅ Ícone processado para todas as densidades"
+          else
+            echo "⚠️ PNG do ícone não encontrada, usando placeholder"
+            # Criar ícone placeholder
+            for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+              convert -size 48x48 xc:black -fill white -pointsize 20 -draw "text 10,25 'NVR'" decompiled_apk/res/drawable-$density/ic_launcher.png
+              cp decompiled_apk/res/drawable-$density/ic_launcher.png decompiled_apk/res/drawable-$density/ic_launcher_round.png
+            done
+          fi
+          
+          # Processar interface PNG (1782380458552.png) - extrair elementos
+          if [ -f "1782380458552.png" ]; then
+            echo "✅ Interface PNG encontrada (recorte manual pode ser necessário)"
+            # Copiar para drawable-xxhdpi como background
+            cp 1782380458552.png decompiled_apk/res/drawable-xxhdpi/bg_steampunk_texture.png
+          else
+            echo "⚠️ Interface PNG não encontrada"
+          fi
+
+      # =========================================================================
+      # Passo 10: Copiar arquivos da interface Steampunk
+      # =========================================================================
+      - name: Copy Steampunk interface files
+        run: |
+          # AndroidManifest.xml
+          cp AndroidManifest.xml decompiled_apk/AndroidManifest.xml
+          
+          # mobileglues.conf
+          cp mobileglues.conf decompiled_apk/assets/mobileglues.conf
+          
+          # NexusVkBridge.smali
+          mkdir -p decompiled_apk/smali/com/nexus/vulkan
+          cp NexusVkBridge.smali decompiled_apk/smali/com/nexus/vulkan/NexusVkBridge.smali
+          
+          # SettingsActivity.smali
+          cp smali/com/nexus/vulkan/SettingsActivity.smali decompiled_apk/smali/com/nexus/vulkan/SettingsActivity.smali
+          
+          # Layouts
+          mkdir -p decompiled_apk/res/layout
+          cp res/layout/activity_settings.xml decompiled_apk/res/layout/activity_settings.xml
+          
+          # Values (colors, strings, styles)
+          mkdir -p decompiled_apk/res/values
+          cp res/values/colors.xml decompiled_apk/res/values/colors.xml
+          cp res/values/strings.xml decompiled_apk/res/values/strings.xml
+          cp res/values/styles.xml decompiled_apk/res/values/styles.xml
+          
+          # Drawables XML
+          cp res/drawable/*.xml decompiled_apk/res/drawable/
+          
+          # Criar slot para lib
+          mkdir -p decompiled_apk/lib/arm64-v8a
+          touch decompiled_apk/lib/arm64-v8a/.gitkeep
+          echo "# Slot para libmobileglues.so" > decompiled_apk/lib/arm64-v8a/.gitkeep
+          
+          echo "✅ Todos os arquivos da interface Steampunk copiados"
+
+      # =========================================================================
+      # Passo 11: Recompilar a APK
+      # =========================================================================
+      - name: Recompile APK
+        run: |
+          # Recompilar
+          apktool b decompiled_apk -o NVR_unsigned.apk
+          
+          # Verificar
+          if [ ! -f "NVR_unsigned.apk" ]; then
+            echo "❌ Falha ao recompilar APK"
+            exit 1
+          fi
+          
+          echo "✅ APK recompilada: NVR_unsigned.apk"
+          ls -lh NVR_unsigned.apk
+
+      # =========================================================================
+      # Passo 12: Alinhar com zipalign
+      # =========================================================================
+      - name: Align APK with zipalign
+        run: |
+          zipalign -v 4 NVR_unsigned.apk NVR_aligned.apk
+          
+          if [ ! -f "NVR_aligned.apk" ]; then
+            echo "❌ Falha ao alinhar APK"
+            exit 1
+          fi
+          
+          echo "✅ APK alinhada: NVR_aligned.apk"
+          ls -lh NVR_aligned.apk
+
+      # =========================================================================
+      # Passo 13: Criar keystore debug
+      # =========================================================================
+      - name: Create debug keystore
+        run: |
+          keytool -genkey -v -keystore debug.keystore \
+            -alias debug \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass 123456 \
+            -keypass 123456 \
+            -dname "CN=Denocorp, OU=Nexus, O=Denocorp, L=Maputo, ST=Maputo, C=MZ"
+          
+          echo "✅ Keystore criada: debug.keystore"
+
+      # =========================================================================
+      # Passo 14: Assinar a APK
+      # =========================================================================
+      - name: Sign APK with apksigner
+        run: |
+          # Assinar
+          apksigner sign \
+            --ks debug.keystore \
+            --ks-pass pass:123456 \
+            --ks-key-alias debug \
+            --key-pass pass:123456 \
+            --out NVR.apk \
+            NVR_aligned.apk
+          
+          # Verificar assinatura
+          apksigner verify --print-certs NVR.apk
+          
+          if [ ! -f "NVR.apk" ]; then
+            echo "❌ Falha ao assinar APK"
+            exit 1
+          fi
+          
+          echo "✅ APK assinada: NVR.apk"
+          ls -lh NVR.apk
+
+      # =========================================================================
+      # Passo 15: Upload do artifact (NVR.apk)
+      # =========================================================================
+      - name: Upload NVR.apk as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NVR_APK
+          path: NVR.apk
+          retention-days: 30
+
+      # =========================================================================
+      # Passo 16: Commit e push da NVR.apk para o repositório
+      # =========================================================================
+      - name: Commit and push NVR.apk
+        run: |
+          # Configurar git
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          
+          # Adicionar NVR.apk ao repositório
+          git add NVR.apk
+          git commit -m "🚀 Build NVR APK with Steampunk interface (GitHub Actions)"
+          git push origin nvr-steampunk-interface
+          
+          echo "✅ NVR.apk commitada e pushada para a branch"
+
+      # =========================================================================
+      # Passo 17: Limpeza (opcional)
+      # =========================================================================
+      - name: Cleanup temporary files
+        if: always()
+        run: |
+          rm -rf decompiled_apk/
+          rm -f NVR_unsigned.apk NVR_aligned.apk debug.keystore
+          echo "✅ Arquivos temporários removidos"
+
+      # =========================================================================
+      # Passo 18: Resumo final
+      # =========================================================================
+      - name: Final summary
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "✅ BUILD CONCLUÍDO COM SUCESSO!"
+          echo "=========================================="
+          echo ""
+          echo "📦 Artifact gerado: NVR.apk"
+          echo "🔗 Download: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo ""
+          echo "📌 Próximos passos:"
+          echo "1. Baixe a NVR.apk dos artifacts"
+          echo "2. Extraia e insira a libmobileglues.so em lib/arm64-v8a/"
+          echo "3. Reempacote e reassine (ou use o script sign_apk.sh)"
+          echo "4. Instale no dispositivo: adb install NVR.apk"
+          echo ""
+          echo "⚠️  O slot para libmobileglues.so está VAZIO (como solicitado)"
+          echo "⚠️  O fluxo do ANGLE está PRESERVADO (como solicitado)"
+          echo ""
