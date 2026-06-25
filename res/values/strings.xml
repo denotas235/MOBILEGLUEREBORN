@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Name -->
+    <string name="app_name">NVR | Nexus Vulkan Render</string>
+    
+    <!-- Settings Title -->
+    <string name="settings_title">NEXUS_VULKAN_RENDER | SETTINGS</string>
+    <string name="settings_subtitle">Advanced Graphics Configuration</string>
+    
+    <!-- Action Bar -->
+    <string name="action_save">SAVE</string>
+    <string name="action_reset">RESET</string>
+    <string name="action_about">ABOUT</string>
+    
+    <!-- Sections -->
+    <string name="section_nvr_mode">NVR MODE</string>
+    <string name="section_shader_cache">SHADER CACHE</string>
+    <string name="section_mali_workaround">MALI WORKAROUND</string>
+    <string name="section_debug_log">DEBUG LOG</string>
+    <string name="section_extensions">EXTENSIONS</string>
+    <string name="section_multidraw">MULTIDRAW EMULATION</string>
+    <string name="section_gpu_optimizations">GPU OPTIMIZATIONS</string>
+    <string name="section_advanced">ADVANCED</string>
+    
+    <!-- NVR Mode -->
+    <string name="angle_mode_label">Use ANGLE as OpenGL ES driver</string>
+    <string name="angle_mode_disabled">Disabled</string>
+    <string name="angle_mode_enabled">Enabled</string>
+    <string name="custom_gl_version_label">Custom target OpenGL Version</string>
+    <string name="custom_gl_version_default">Default (4.0)</string>
+    <string name="custom_gl_version_32">OpenGL ES 3.2</string>
+    <string name="custom_gl_version_40">OpenGL 4.0</string>
+    <string name="custom_gl_version_46">OpenGL 4.6</string>
+    <string name="hide_mg_env_label">Hide MobileGlues Environment</string>
+    <string name="hide_mg_env_disabled">Disabled</string>
+    <string name="hide_mg_env_level1">Level 1 (Hide extensions)</string>
+    
+    <!-- Shader Cache -->
+    <string name="max_glsl_cache_size_label">Max GLSL Cache Size</string>
+    <string name="max_glsl_cache_size_unit">MB</string>
+    <string name="shader_binary_cache_label">Shader Binary Cache</string>
+    <string name="shader_binary_cache_path_label">Cache Path</string>
+    <string name="shader_binary_cache_path_hint">/sdcard/Android/data/com.nexus.vulkan/cache</string>
+    
+    <!-- Mali Workaround -->
+    <string name="framebuffer_fetch_label">Framebuffer Fetch</string>
+    <string name="framebuffer_fetch_summary">Enable Mali-specific framebuffer fetch operations</string>
+    <string name="phase2_lighting_label">Phase 2 Lighting</string>
+    <string name="phase2_lighting_summary">Two-phase lighting optimization for Mali GPUs</string>
+    <string name="angle_depth_clear_fix_label">ANGLE Depth Clear Workaround</string>
+    <string name="angle_depth_clear_fix_disabled">Disabled</string>
+    <string name="angle_depth_clear_fix_mode1">Mode 1 (glClearBufferfv)</string>
+    <string name="angle_depth_clear_fix_mode2">Mode 2 (glClearBufferiv)</string>
+    
+    <!-- Debug Log -->
+    <string name="debug_log_level_label">Debug Log Level</string>
+    <string name="debug_log_level_off">Off</string>
+    <string name="debug_log_level_error">Error</string>
+    <string name="debug_log_level_warn">Warn</string>
+    <string name="debug_log_level_info">Info</string>
+    <string name="debug_log_level_debug">Debug</string>
+    <string name="timer_query_label">Enable Timer Query</string>
+    <string name="timer_query_summary">Enable GL_EXT_timer_query for profiling</string>
+    
+    <!-- Extensions -->
+    <string name="ext_compute_shader_label">ARB Compute Shader</string>
+    <string name="ext_compute_shader_summary">Enable GL_ARB_compute_shader extension</string>
+    <string name="ext_timer_query_label">EXT Timer Query</string>
+    <string name="ext_timer_query_summary">Enable GL_EXT_timer_query extension</string>
+    <string name="ext_direct_state_access_label">Direct State Access</string>
+    <string name="ext_direct_state_access_summary">Enable GL_ARB_direct_state_access extension</string>
+    
+    <!-- MultiDraw Emulation -->
+    <string name="multidraw_mode_label">MultiDraw Mode</string>
+    <string name="multidraw_mode_auto">Auto</string>
+    <string name="multidraw_mode_prefer_indirect">Prefer Indirect</string>
+    <string name="multidraw_mode_prefer_base_vertex">Prefer Base Vertex</string>
+    <string name="multidraw_mode_prefer_multidraw_indirect">Prefer Multidraw Indirect</string>
+    <string name="multidraw_mode_draw_elements">Draw Elements</string>
+    <string name="multidraw_mode_compute">Compute</string>
+    
+    <!-- GPU Optimizations -->
+    <string name="anisotropic_filtering_label">Anisotropic Filtering</string>
+    <string name="anisotropic_filtering_summary">Improve texture quality at oblique angles</string>
+    <string name="anisotropic_filtering_max_level">Max Level</string>
+    <string name="ubo_ssbo_conversion_label">UBO/SSBO Conversion</string>
+    <string name="ubo_ssbo_conversion_summary">Convert Uniform Buffers to Shader Storage Buffers</string>
+    <string name="extension_scanner_label">Extension Scanner</string>
+    <string name="extension_scanner_summary">Scan for available OpenGL extensions</string>
+    <string name="astc_transcoding_label">ASTC Transcoding</string>
+    <string name="astc_transcoding_summary">Transcode ASTC textures to DXT1/BC7</string>
+    <string name="damage_regions_label">Damage Regions</string>
+    <string name="damage_regions_summary">Track dirty regions for partial rendering</string>
+    
+    <!-- Switches Description -->
+    <string name="switches_desc">Enable Incomplete \'ARB_compute_shader\' Disable Recommended \'direct_state_access\'</string>
+    
+    <!-- Footer -->
+    <string name="powered_by">POWERED BY
+NEVURE | NVR PIPELINE</string>
+    <string name="speed_rating">SPEED RATING:
+VULKAN ACTIVE</string>
+    
+    <!-- Tooltips -->
+    <string name="tooltip_angle">ANGLE translates OpenGL ES calls to Vulkan/DirectX for better compatibility</string>
+    <string name="tooltip_shader_cache">Caches compiled shaders to reduce load times</string>
+    <string name="tooltip_framebuffer_fetch">Mali-specific feature for post-processing effects</string>
+    <string name="tooltip_phase2_lighting">Optimizes lighting calculations for Mali GPUs</string>
+    
+    <!-- Dialogs -->
+    <string name="dialog_reset_title">Reset Settings</string>
+    <string name="dialog_reset_message">Are you sure you want to reset all settings to default?</string>
+    <string name="dialog_reset_positive">Reset</string>
+    <string name="dialog_reset_negative">Cancel</string>
+    <string name="dialog_save_title">Save Settings</string>
+    <string name="dialog_save_message">Settings will be applied after restarting the game.</string>
+    <string name="dialog_save_positive">OK</string>
+    
+    <!-- Toast Messages -->
+    <string name="toast_settings_saved">Settings saved!</string>
+    <string name="toast_settings_reset">Settings reset to default</string>
+    <string name="toast_loading">Loading...</string>
+    
+    <!-- About -->
+    <string name="about_title">About NVR</string>
+    <string name="about_version">Version</string>
+    <string name="about_gpu">GPU</string>
+    <string name="about_vulkan">Vulkan</string>
+    <string name="about_opengl">OpenGL</string>
+    <string name="about_description">Nexus Vulkan Render (NVR) is an advanced graphics pipeline for Minecraft on mobile devices. It provides Vulkan and ANGLE support, GPU-specific optimizations, and shader caching for improved performance.</string>
+    <string name="about_license">Licensed under LGPL-2.1</string>
+    <string name="about_copyright">Copyright (c) 2025-2026 MobileGL-Dev</string>
+</resources>
