@@ -1,9 +1,8 @@
-// MobileGlues - version.h
+// NEXUS_VK_RENDER (NVR) - version.h
 // Copyright (c) 2025-2026 MobileGL-Dev
 // Licensed under the GNU Lesser General Public License v2.1:
 //   https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt
 // SPDX-License-Identifier: LGPL-2.1-only
-// End of Source File Header
 
 #ifndef MOBILEGLUES_VERSION_H
 
@@ -26,6 +25,9 @@
 
 #define VERSION_SUFFIX ""
 
-#define MOBILEGLUES_VERSION_H
+// Renderer identity — NEXUS_VK_RENDER (NVR)
+#define RENDERERNAME      "NEXUS_VK_RENDER"
+#define RENDERERNAME_SHORT "NVR"
 
+#define MOBILEGLUES_VERSION_H
 #endif // MOBILEGLUES_VERSION_H
