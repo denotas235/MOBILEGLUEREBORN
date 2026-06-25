@@ -30,4 +30,9 @@ std::string GLSLtoGLSLES_1(const char* glsl_code, GLenum glsl_type, uint esversi
 std::string GLSLtoGLSLES_2(const char* glsl_code, GLenum glsl_type, uint essl_version, int& return_code);
 int getGLSLVersion(const char* glsl_code);
 
+// NVR: exposed so nexus_vk_bridge.cpp can compile GLSL→SPIRV without going through GLSL ES.
+#include <vector>
+std::vector<unsigned int> glsl_to_spirv(GLenum shader_type, int glsl_version,
+                                         const char* const* shader_src, int& errc);
+
 #endif
